@@ -157,6 +157,7 @@
 
   .bar-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .bar-row .seg { margin-left:auto; }
+  .bar-weight-label { font-family:var(--mono); font-size:13px; color:var(--gray-500); margin-left:auto; }
 
   /* ---- memory ---- */
   .mem-card { border-left:4px solid var(--olive); }
@@ -241,7 +242,7 @@
     <div class="head"><span class="eyebrow">Bar</span></div>
     <div class="bar-row">
       <div class="seg small" id="barGender"></div>
-      <div class="seg small" id="barWeight"></div>
+      <span class="bar-weight-label" id="barWeightLabel"></span>
     </div>
   </section>
 
@@ -305,19 +306,16 @@
 
     <div class="section-label" style="margin-top:20px;">Bar</div>
     <div class="cfg-row">
-      <label>Male bar options</label>
-      <input type="text" id="cfgBarMale" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:120px;" placeholder="20, 15">
+      <label>Male bar weight</label>
+      <input type="number" id="cfgBarMale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="20">
     </div>
     <div class="cfg-row">
-      <label>Female bar options</label>
-      <input type="text" id="cfgBarFemale" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:120px;" placeholder="15, 10">
+      <label>Female bar weight</label>
+      <input type="number" id="cfgBarFemale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="15">
     </div>
 
     <div class="section-label" style="margin-top:20px;">Appearance</div>
-    <div class="cfg-row">
-      <label>Follow system light / dark</label>
-      <span class="switch"><input type="checkbox" id="cfgAutoTheme"><span class="track"></span></span>
-    </div>
+    <div class="seg" id="cfgTheme" style="margin-bottom:16px;"></div>
 
     <div class="section-label" style="margin-top:20px;">Data</div>
     <div class="btnrow" style="margin-top:4px;">
@@ -346,7 +344,7 @@
       { label: "2",    value: 2    },
       { label: "1.5",  value: 1.5  }
     ],
-    bars: { male: [20, 15], female: [15, 10] }
+    bars: { male: 20, female: 15 }
   };
 
   var LS_KEY = "plates.config.v1";
@@ -358,8 +356,14 @@
 
   // ---------- STATE ----------
   var config = load(LS_KEY, null) || clone(DEFAULTS);
+  // migrate old bar format: { male: [20, 15], female: [15, 10] } → { male: 20, female: 15 }
+  if (config.bars && Array.isArray(config.bars.male)) {
+    config.bars.male = config.bars.male[0] || 20;
+    config.bars.female = (config.bars.female && config.bars.female[0]) || 15;
+    save(LS_KEY, config);
+  }
   var selected = load(LS_SELECTED, {});   // { "25": 1, "5": 1 }  (each plate on/off, one of each)
-  var barSel = load(LS_BAR, { gender: "male", weight: config.bars.male[0] });
+  var barSel = load(LS_BAR, { gender: "male" });
   var memory = load(LS_MEM, null);        // number | null
   var history = load(LS_HIST, []);        // array of snapshots
   var themeMode = load(LS_THEME, "auto"); // auto | light | dark
@@ -395,9 +399,8 @@
     return s;
   }
   function barValue(){
-    var arr = config.bars[barSel.gender] || [];
-    if (arr.indexOf(barSel.weight) === -1) barSel.weight = arr[0];
-    return barSel.weight || 0;
+    var v = config.bars[barSel.gender];
+    return (typeof v === "number" && !isNaN(v)) ? v : 0;
   }
   function total(){ return plateSum() * 2 + barValue(); }
 
@@ -469,13 +472,9 @@
   function renderBar(){
     renderSeg("barGender", ["male", "female"], barSel.gender, function(v){
       barSel.gender = v;
-      barSel.weight = (config.bars[v] || [])[0];
       save(LS_BAR, barSel); render();
     });
-    renderSeg("barWeight", (config.bars[barSel.gender] || []).map(String), String(barSel.weight), function(v){
-      barSel.weight = parseFloat(v);
-      save(LS_BAR, barSel); render();
-    });
+    document.getElementById("barWeightLabel").textContent = fmt(barValue()) + " " + unit();
   }
   function renderSeg(id, options, current, onPick){
     var wrap = document.getElementById(id);
@@ -611,7 +610,6 @@
     selected = {};
     (h.plates || []).forEach(function(x){ selected[x.label] = x.count; });
     barSel.gender = h.gender || "male";
-    barSel.weight = h.bar;
     save(LS_SELECTED, selected);
     save(LS_BAR, barSel);
     render();
@@ -679,10 +677,12 @@
       wrap.appendChild(row);
     });
     // bars
-    document.getElementById("cfgBarMale").value = (config.bars.male || []).join(", ");
-    document.getElementById("cfgBarFemale").value = (config.bars.female || []).join(", ");
+    document.getElementById("cfgBarMale").value = config.bars.male;
+    document.getElementById("cfgBarFemale").value = config.bars.female;
     // theme
-    document.getElementById("cfgAutoTheme").checked = (themeMode === "auto");
+    renderSeg("cfgTheme", ["light", "auto", "dark"], themeMode, function(v){
+      themeMode = v; save(LS_THEME, themeMode); applyTheme();
+    });
   }
 
   // ---------- WIRING ----------
@@ -707,19 +707,12 @@
     });
 
     document.getElementById("cfgBarMale").addEventListener("change", function(){
-      config.bars.male = this.value.split(",").map(function(x){ return parseFloat(x.trim()); })
-        .filter(function(x){ return !isNaN(x); });
+      config.bars.male = parseFloat(this.value) || 0;
       save(LS_KEY, config); renderBar(); renderResult();
     });
     document.getElementById("cfgBarFemale").addEventListener("change", function(){
-      config.bars.female = this.value.split(",").map(function(x){ return parseFloat(x.trim()); })
-        .filter(function(x){ return !isNaN(x); });
+      config.bars.female = parseFloat(this.value) || 0;
       save(LS_KEY, config); renderBar(); renderResult();
-    });
-
-    document.getElementById("cfgAutoTheme").addEventListener("change", function(){
-      themeMode = this.checked ? "auto" : "dark";
-      save(LS_THEME, themeMode); applyTheme();
     });
 
     document.getElementById("resetDefaultsBtn").addEventListener("click", function(){
@@ -727,7 +720,7 @@
       save(LS_KEY, config);
       selected = {};
       save(LS_SELECTED, selected);
-      barSel = { gender: "male", weight: config.bars.male[0] };
+      barSel = { gender: "male" };
       save(LS_BAR, barSel);
       render(); renderConfig();
     });
