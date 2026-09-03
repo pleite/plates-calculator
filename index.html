@@ -64,12 +64,12 @@
 
   .topbar { margin-bottom:24px; }
 
-  .event-grid { display:flex; flex-direction:column; gap:12px; }
+  .event-grid { display:flex; flex-direction:column; gap:10px; }
 
   .event-card {
     display:flex; align-items:center; gap:14px;
     background:var(--white); border:var(--border); border-radius:var(--radius-panel);
-    padding:16px; text-decoration:none; color:var(--gray-700);
+    padding:14px 16px; text-decoration:none; color:var(--gray-700);
     box-shadow:var(--shadow); transition:transform .06s ease;
   }
   .event-card:active { transform:scale(.98); }
@@ -79,9 +79,15 @@
     padding:6px 10px; flex:none;
   }
   .event-card .info { flex:1; min-width:0; }
-  .event-card .name { font-family:var(--serif); font-size:18px; font-weight:500; }
-  .event-card .desc { font-family:var(--mono); font-size:12px; color:var(--gray-500); margin-top:2px; }
+  .event-card .name { font-family:var(--serif); font-size:17px; font-weight:500; }
+  .event-card .desc { font-family:var(--mono); font-size:11.5px; color:var(--gray-500); margin-top:2px; }
   .event-card .arrow { font-size:20px; color:var(--gray-500); flex:none; }
+
+  .day-label {
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--gray-500); margin:16px 0 8px; padding-left:2px;
+  }
+  .day-label:first-child { margin-top:0; }
 
   .foot { text-align:center; font-family:var(--mono); font-size:11px; color:var(--gray-500); margin-top:24px; }
 </style>
@@ -89,44 +95,84 @@
 <body>
 <div class="page">
   <div class="topbar">
-    <span class="eyebrow">Xenom.global · Decathlon</span>
+    <span class="eyebrow">Xenom.global · Decathlon of Fitness</span>
     <h1>Scorecards</h1>
-    <span class="sub">Select an event to score</span>
+    <span class="sub">10 events · 2 days · select to score</span>
   </div>
 
   <div class="event-grid">
+    <div class="day-label">Day 1</div>
+
     <a class="event-card" href="snatch.html">
       <span class="num">001</span>
       <div class="info">
-        <div class="name">Snatch RM</div>
-        <div class="desc">Weight plate calculator · kg/lb</div>
+        <div class="name">1RM Snatch</div>
+        <div class="desc">Plate calculator · 4 attempts · kg/lb</div>
       </div>
       <span class="arrow">→</span>
     </a>
 
-    <a class="event-card" href="hspu.html">
+    <a class="event-card" href="event-002.html">
       <span class="num">002</span>
       <div class="info">
-        <div class="name">HSPU</div>
-        <div class="desc">6 rounds · sum of good reps</div>
+        <div class="name">Wall Walks + Rope Climbs</div>
+        <div class="desc">Ladder · +2 WW +1 RC per round · 8 min</div>
       </div>
       <span class="arrow">→</span>
     </a>
 
-    <a class="event-card" href="c2b.html">
-      <span class="num">003</span>
-      <div class="info">
-        <div class="name">C2B</div>
-        <div class="desc">8 rounds · sum of good reps</div>
-      </div>
-      <span class="arrow">→</span>
-    </a>
-
-    <a class="event-card" href="lunges.html">
+    <a class="event-card" href="event-004.html">
       <span class="num">004</span>
       <div class="info">
-        <div class="name">Lunges</div>
-        <div class="desc">12 rounds · sum of good reps</div>
+        <div class="name">Barbell Cycling</div>
+        <div class="desc">AMRAP · 12 DL + 9 FS + 6 S2OH + 3 Thr · 5 min</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="event-card" href="event-006.html">
+      <span class="num">006</span>
+      <div class="info">
+        <div class="name">Complex Gymnastics Sprint</div>
+        <div class="desc">3×(15 T2R + 10 DB HS → 10 PU) + AMRAP C2B · 6 min</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="event-card" href="event-007.html">
+      <span class="num">007</span>
+      <div class="info">
+        <div class="name">Rhino</div>
+        <div class="desc">5RM Pull · best load counts · 3 min</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <div class="day-label">Day 2</div>
+
+    <a class="event-card" href="event-008.html">
+      <span class="num">008</span>
+      <div class="info">
+        <div class="name">Cardio Chipper</div>
+        <div class="desc">Chipper + AMRAP burpees · 12 min</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="event-card" href="event-009.html">
+      <span class="num">009</span>
+      <div class="info">
+        <div class="name">Heavy Clean Ladder</div>
+        <div class="desc">10→2 reps at ascending weights + AMRAP · 8 min</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="event-card" href="event-010.html">
+      <span class="num">010</span>
+      <div class="info">
+        <div class="name">Gym Triplet</div>
+        <div class="desc">AMRAP · 6 HSPU + 8 PU + 12 Lunge · 12 min</div>
       </div>
       <span class="arrow">→</span>
     </a>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cardio Chipper">
+<meta name="theme-color" content="#FAF9F5">
+<title>Event 008 — Cardio Chipper</title>
+<style>
+  :root{--ivory:#FAF9F5;--white:#FFFFFF;--slate:#141413;--clay:#D97757;--olive:#788C5D;
+    --rust:#B04A3F;--oat:#E3DACC;--gray-150:#F0EEE6;--gray-300:#D1CFC5;--gray-500:#87867F;
+    --gray-700:#3D3D3A;--border:1.5px solid var(--gray-300);--radius-panel:12px;--radius-row:8px;
+    --radius-pill:999px;--serif:ui-serif,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(20,20,19,.04),0 4px 14px rgba(20,20,19,.05);
+    --tint-olive:rgba(120,140,93,.16);--tint-rust:rgba(176,74,63,.14);--tint-clay:rgba(217,119,87,.08);}
+  @media (prefers-color-scheme:dark){
+    :root{--ivory:#121211;--white:#1C1C1A;--slate:#ECEAE2;--clay:#E08A6C;--olive:#93A878;
+    --rust:#D06A5E;--oat:#2A2A26;--gray-150:#232320;--gray-300:#3A3A35;--gray-500:#8A897F;
+    --gray-700:#ECEAE2;--border:1.5px solid var(--gray-300);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.4);
+    --tint-olive:rgba(147,168,120,.18);--tint-rust:rgba(208,106,94,.18);--tint-clay:rgba(224,138,108,.14);}}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+  body{background:var(--ivory);color:var(--gray-700);font-family:var(--sans);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+  .page{max-width:560px;margin:0 auto;padding:18px 16px 40px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray-500);}
+  h1{font-family:var(--serif);font-weight:500;letter-spacing:-.01em;font-size:26px;}
+  .sub{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:2px;}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  .topbar .titles{display:flex;flex-direction:column;gap:2px;}
+  .card{background:var(--white);border:var(--border);border-radius:var(--radius-panel);
+    padding:16px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .card .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .result{text-align:center;padding:6px 0 2px;}
+  .result .big{font-family:var(--serif);font-weight:500;font-size:56px;letter-spacing:-.02em;
+    color:var(--clay);line-height:1;}
+  .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
+  .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
+  .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
+  .chipper{display:flex;flex-direction:column;gap:8px;}
+  .crow{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;
+    padding:10px 12px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);
+    transition:background .12s,border-color .12s;}
+  .crow.done{background:var(--tint-olive);border-color:var(--olive);}
+  .crow .ex{font-size:14px;}
+  .crow .ex .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .crow .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
+    border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
+    text-align:center;width:100%;}
+  .crow .reps:focus{outline:none;border-color:var(--clay);}
+  .amrap{margin-top:14px;padding:12px;border:var(--border);border-radius:var(--radius-row);
+    background:var(--tint-clay);}
+  .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .amrap .amrap-label{font-family:var(--mono);font-size:13px;color:var(--clay);font-weight:600;}
+  .amrap .amrap-row{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;}
+  .amrap .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
+    border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
+    text-align:center;width:100%;}
+  .amrap .reps:focus{outline:none;border-color:var(--clay);}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
+  button{font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:var(--radius-row);
+    cursor:pointer;border:var(--border);background:var(--white);color:var(--gray-700);
+    -webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;gap:6px;
+    transition:transform .06s ease;}
+  button:active{transform:scale(.97);}
+  .btn-warn{background:var(--tint-rust);border-color:var(--rust);color:var(--rust);}
+  .btn-ghost{background:transparent;}
+  .foot{text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:8px;}
+  .foot a{color:var(--gray-500);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="titles">
+      <span class="eyebrow">Event 008 · Cardio Chipper</span>
+      <h1>Cardio Chipper</h1>
+      <span class="sub">12 min · chipper sequence + AMRAP burpees</span>
+    </div>
+  </div>
+
+  <section class="card result">
+    <div class="big"><span id="total">0</span><span class="unit">reps</span></div>
+    <div class="caption">total reps (chipper + AMRAP)</div>
+    <div class="detail" id="detail"></div>
+  </section>
+
+  <section class="card">
+    <div class="head">
+      <span class="eyebrow">Chipper</span>
+      <button id="clearBtn" class="btn-warn" style="padding:7px 12px;font-size:12px;">✕ Clear all</button>
+    </div>
+    <div class="chipper" id="chipper"></div>
+    <div class="amrap">
+      <div class="amrap-head">
+        <span class="amrap-label">AMRAP · Burpees Over Line</span>
+        <span class="amrap-label" id="amrapCount">0 reps</span>
+      </div>
+      <div class="amrap-row">
+        <span style="font-size:14px;">Max Burpees</span>
+        <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP burpees">
+      </div>
+    </div>
+  </section>
+
+  <p class="foot"><a href="index.html">← All events</a> · Enter reps per exercise · all reps count</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var CHIPPER=[
+    {name:"Lateral Burpees Over Line",target:30},
+    {name:"Echo Ski Calories",target:30},
+    {name:"Echo Bike Calories",target:30},
+    {name:"Lateral Burpees Over Line",target:30},
+    {name:"Echo Bike Calories",target:30},
+    {name:"Echo Ski Calories",target:30}
+  ];
+  var LS_KEY="event008.chipper.v1";
+
+  function defaultState(){
+    var s={chipper:[],amrap:0};
+    for(var i=0;i<CHIPPER.length;i++) s.chipper.push(0);
+    return s;
+  }
+  function load(key,fb){
+    try{var raw=localStorage.getItem(key);if(raw==null)return fb;
+      var p=JSON.parse(raw);
+      if(!p||!Array.isArray(p.chipper)||p.chipper.length!==CHIPPER.length)return fb;
+      return p;}
+    catch(e){return fb;}
+  }
+  function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+
+  var state=load(LS_KEY,defaultState());
+
+  function chipperTotal(){
+    var t=0;
+    for(var i=0;i<CHIPPER.length;i++) t+=(state.chipper[i]||0);
+    return t;
+  }
+  function totalReps(){
+    return chipperTotal()+(state.amrap||0);
+  }
+  function isRowDone(i){
+    return (state.chipper[i]||0)>=CHIPPER[i].target;
+  }
+
+  function render(){
+    var wrap=document.getElementById("chipper");
+    wrap.innerHTML="";
+    for(var i=0;i<CHIPPER.length;i++){
+      (function(i){
+        var d=CHIPPER[i];
+        var row=document.createElement("div");
+        row.className="crow"+(isRowDone(i)?" done":"");
+        var ex=document.createElement("span");
+        ex.className="ex";
+        ex.innerHTML=d.name+' <span class="target">'+d.target+'</span>';
+        var inp=document.createElement("input");
+        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
+        inp.value=state.chipper[i]||"";inp.placeholder="0";
+        inp.setAttribute("aria-label",d.name+" "+(i+1));
+        inp.addEventListener("input",function(){
+          state.chipper[i]=parseInt(inp.value,10)||0;
+          save();render();
+        });
+        row.appendChild(ex);row.appendChild(inp);
+        wrap.appendChild(row);
+      })(i);
+    }
+    document.getElementById("amrapInput").value=state.amrap||"";
+    renderTotal();
+  }
+  function renderTotal(){
+    var t=totalReps();
+    document.getElementById("total").textContent=t;
+    document.getElementById("detail").textContent=chipperTotal()+" chipper · "+(state.amrap||0)+" AMRAP";
+    document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
+  }
+
+  document.getElementById("amrapInput").addEventListener("input",function(){
+    state.amrap=parseInt(this.value,10)||0;
+    save();renderTotal();
+  });
+  document.getElementById("clearBtn").addEventListener("click",function(){
+    state=defaultState();save();render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>
