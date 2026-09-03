@@ -6,13 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Plates">
+<meta name="apple-mobile-web-app-title" content="Xenom">
 <meta name="theme-color" content="#FAF9F5">
-<title>Plates — weight plate calculator</title>
-<link rel="manifest" id="manifest">
+<title>Xenom.global — Decathlon Scorecards</title>
 <style>
   :root {
-    /* surfaces */
     --ivory:    #FAF9F5;
     --white:    #FFFFFF;
     --slate:    #141413;
@@ -27,15 +25,10 @@
     --border: 1.5px solid var(--gray-300);
     --radius-panel: 12px;
     --radius-row: 8px;
-    --radius-pill: 999px;
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     --mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --shadow: 0 1px 2px rgba(20,20,19,.04), 0 4px 14px rgba(20,20,19,.05);
-    --tint-clay: rgba(217,119,87,.08);
-    --tint-olive: rgba(120,140,93,.16);
-    --tint-rust: rgba(176,74,63,.14);
-    --tint-oat: rgba(227,218,204,.55);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -52,10 +45,6 @@
       --gray-700: #ECEAE2;
       --border: 1.5px solid var(--gray-300);
       --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.4);
-      --tint-clay: rgba(224,138,108,.14);
-      --tint-olive: rgba(147,168,120,.18);
-      --tint-rust: rgba(208,106,94,.18);
-      --tint-oat: rgba(42,42,38,.6);
     }
   }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -70,678 +59,80 @@
 
   .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.08em;
              text-transform:uppercase; color:var(--gray-500); }
-  h1 { font-family:var(--serif); font-weight:500; letter-spacing:-.01em; font-size:26px; }
-  h2 { font-family:var(--serif); font-weight:500; font-size:18px; margin:0 0 4px; }
+  h1 { font-family:var(--serif); font-weight:500; letter-spacing:-.01em; font-size:28px; }
+  .sub { font-family:var(--mono); font-size:12px; color:var(--gray-500); margin-top:2px; }
 
-  .topbar { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:18px; }
-  .topbar .titles { display:flex; flex-direction:column; gap:2px; }
-  .topbar .sub { font-family:var(--mono); font-size:12px; color:var(--gray-500); }
+  .topbar { margin-bottom:24px; }
 
-  .card { background:var(--white); border:var(--border); border-radius:var(--radius-panel);
-          padding:16px; margin-bottom:16px; box-shadow:var(--shadow); }
-  .card .head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
-  .card .head .eyebrow { margin-bottom:0; }
+  .event-grid { display:flex; flex-direction:column; gap:12px; }
 
-  /* ---- plate tiles ---- */
-  .plates { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  .plate {
-    position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:2px; min-height:74px; border:var(--border); border-radius:var(--radius-row);
-    background:var(--ivory); cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent;
-    transition:transform .06s ease, background .12s, border-color .12s;
+  .event-card {
+    display:flex; align-items:center; gap:14px;
+    background:var(--white); border:var(--border); border-radius:var(--radius-panel);
+    padding:16px; text-decoration:none; color:var(--gray-700);
+    box-shadow:var(--shadow); transition:transform .06s ease;
   }
-  .plate:active { transform:scale(.97); }
-  .plate .glyph { font-size:22px; line-height:1; color:var(--gray-500); }
-  .plate .val { font-family:var(--serif); font-weight:500; font-size:24px; letter-spacing:-.01em; }
-  .plate .cnt { font-family:var(--mono); font-size:11px; color:var(--gray-500); }
-  .plate.on { background:var(--tint-clay); border-color:var(--clay); }
-  .plate.on .glyph { color:var(--clay); }
-  .plate.on .val { color:var(--clay); }
-  .plate.on .cnt { color:var(--clay); }
-  .plate .badge {
-    position:absolute; top:6px; right:6px; min-width:18px; height:18px; padding:0 5px;
-    border-radius:var(--radius-pill); background:var(--clay); color:var(--ivory);
-    font-family:var(--mono); font-size:11px; display:flex; align-items:center; justify-content:center;
+  .event-card:active { transform:scale(.98); }
+  .event-card .num {
+    font-family:var(--mono); font-size:13px; color:var(--gray-500);
+    background:var(--gray-150); border-radius:var(--radius-row);
+    padding:6px 10px; flex:none;
   }
-  .plate.off .badge { display:none; }
+  .event-card .info { flex:1; min-width:0; }
+  .event-card .name { font-family:var(--serif); font-size:18px; font-weight:500; }
+  .event-card .desc { font-family:var(--mono); font-size:12px; color:var(--gray-500); margin-top:2px; }
+  .event-card .arrow { font-size:20px; color:var(--gray-500); flex:none; }
 
-  .divider { height:1px; background:var(--gray-300); margin:14px 0; }
-  .section-label { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
-                   color:var(--gray-500); margin:0 0 10px; }
-
-  /* ---- buttons ---- */
-  .btnrow { display:flex; gap:10px; flex-wrap:wrap; }
-  button {
-    font-family:var(--mono); font-size:13px; padding:10px 14px; border-radius:var(--radius-row);
-    cursor:pointer; border:var(--border); background:var(--white); color:var(--gray-700);
-    -webkit-tap-highlight-color:transparent; display:inline-flex; align-items:center; gap:6px;
-    transition:transform .06s ease, background .12s;
-  }
-  button:active { transform:scale(.97); }
-  button .glyph { font-size:15px; line-height:1; }
-  .btn-primary { background:var(--slate); color:var(--ivory); border-color:var(--slate); }
-  .btn-primary.copied { background:var(--olive); border-color:var(--olive); }
-  .btn-warn { background:var(--tint-rust); border-color:var(--rust); color:var(--rust); }
-  .btn-olive { background:var(--tint-olive); border-color:var(--olive); color:var(--olive); }
-  .btn-ghost { background:transparent; }
-  .btn:disabled { opacity:.4; cursor:not-allowed; }
-
-  /* ---- result band ---- */
-  .result { text-align:center; padding:6px 0 2px; }
-  .result .big { font-family:var(--serif); font-weight:500; font-size:52px; letter-spacing:-.02em;
-                 color:var(--clay); line-height:1; }
-  .result .big .unit { font-size:20px; color:var(--gray-500); margin-left:6px; font-family:var(--mono); }
-  .result .caption { font-family:var(--mono); font-size:12px; color:var(--gray-500); margin-top:6px; }
-  .result .alt { font-family:var(--mono); font-size:12px; color:var(--gray-500); margin-top:2px; }
-
-  .sumline { display:flex; align-items:center; justify-content:space-between; gap:10px;
-             padding:9px 0; font-size:15px; }
-  .sumline + .sumline { border-top:1px dashed var(--gray-300); }
-  .sumline .k { color:var(--gray-500); font-family:var(--mono); font-size:12.5px; }
-  .sumline .v { font-family:var(--mono); font-size:15px; }
-  .sumline .v.mono-serif { font-family:var(--serif); font-size:19px; }
-  .sumline .v.hi { color:var(--clay); }
-  .sumline .v.mem { color:var(--olive); }
-
-  .equation { font-family:var(--mono); font-size:12.5px; color:var(--gray-500);
-              background:var(--gray-150); border-radius:var(--radius-row); padding:10px 12px;
-              margin-top:12px; line-height:1.7; word-break:break-word; }
-  .equation b { color:var(--gray-700); font-weight:600; }
-
-  /* ---- segmented selector ---- */
-  .seg { display:inline-flex; border:var(--border); border-radius:var(--radius-pill); overflow:hidden; }
-  .seg button { border:none; border-radius:0; background:var(--white); color:var(--gray-500); padding:8px 14px; }
-  .seg button + button { border-left:var(--border); }
-  .seg button.on { background:var(--slate); color:var(--ivory); }
-  .seg.small button { padding:7px 11px; font-size:12px; }
-
-  .bar-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .bar-row .seg { margin-left:auto; }
-  .bar-weight-label { font-family:var(--mono); font-size:13px; color:var(--gray-500); margin-left:auto; }
-
-  /* ---- memory ---- */
-  .mem-card { border-left:4px solid var(--olive); }
-  .mem-empty { font-family:var(--mono); font-size:12.5px; color:var(--gray-500); }
-
-  /* ---- history ---- */
-  .hist-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px dashed var(--gray-300); }
-  .hist-item:first-child { border-top:none; }
-  .hist-item .meta { flex:1; min-width:0; }
-  .hist-item .meta .top { display:flex; align-items:baseline; gap:8px; }
-  .hist-item .meta .top .tot { font-family:var(--serif); font-size:18px; font-weight:500; }
-  .hist-item .meta .top .unit { font-family:var(--mono); font-size:11px; color:var(--gray-500); }
-  .hist-item .meta .detail { font-family:var(--mono); font-size:11.5px; color:var(--gray-500);
-                             margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .hist-item .meta .time { font-family:var(--mono); font-size:10.5px; color:var(--gray-500); margin-top:2px; }
-  .hist-item .acts { display:flex; gap:6px; }
-  .hist-item .acts button { padding:6px 9px; font-size:11.5px; }
-  .hist-empty { font-family:var(--mono); font-size:12.5px; color:var(--gray-500); }
-
-  /* ---- config ---- */
-  .cfg-row { display:flex; align-items:center; gap:10px; padding:9px 0; }
-  .cfg-row + .cfg-row { border-top:1px dashed var(--gray-300); }
-  .cfg-row label { flex:1; font-size:14px; }
-  .cfg-row .hint { font-family:var(--mono); font-size:11px; color:var(--gray-500); }
-  .cfg-plates { display:flex; flex-direction:column; gap:8px; }
-  .cfg-plate { display:grid; grid-template-columns:1fr 92px 34px; gap:8px; align-items:center; }
-  .cfg-plate input[type=text], .cfg-plate input[type=number] {
-    font-family:var(--mono); font-size:14px; padding:8px 10px; border:var(--border);
-    border-radius:var(--radius-row); background:var(--ivory); color:var(--gray-700); width:100%;
-  }
-  .cfg-plate input[type=number] { text-align:right; }
-  .cfg-plate .del { border:var(--border); background:var(--tint-rust); color:var(--rust);
-                    border-radius:var(--radius-row); font-size:15px; padding:0 0; height:38px; }
-  .cfg-plate .add { grid-column:1 / -1; justify-content:center; }
-  .cfg-plates .divider { margin:12px 0 4px; }
-  .switch { position:relative; width:46px; height:27px; flex:none; }
-  .switch input { opacity:0; width:0; height:0; }
-  .switch .track { position:absolute; inset:0; background:var(--gray-300); border-radius:var(--radius-pill);
-                   transition:background .15s; cursor:pointer; }
-  .switch .track::before { content:""; position:absolute; width:21px; height:21px; left:3px; top:3px;
-                           background:var(--white); border-radius:50%; transition:transform .15s;
-                           box-shadow:0 1px 2px rgba(0,0,0,.2); }
-  .switch input:checked + .track { background:var(--olive); }
-  .switch input:checked + .track::before { transform:translateX(19px); }
-
-  .foot { text-align:center; font-family:var(--mono); font-size:11px; color:var(--gray-500); margin-top:8px; }
-
-  /* ---- modal ---- */
-  .modal { position:fixed; inset:0; background:rgba(20,20,19,.45); display:none;
-           align-items:flex-end; justify-content:center; z-index:50; }
-  .modal.open { display:flex; }
-  .modal .sheet { background:var(--white); width:100%; max-width:560px;
-                  border-radius:16px 16px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
-                  max-height:88vh; overflow-y:auto; }
-  .modal .sheet .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .modal .close { border:none; background:var(--gray-150); border-radius:50%; width:34px; height:34px;
-                  font-size:16px; color:var(--gray-700); display:flex; align-items:center; justify-content:center; }
+  .foot { text-align:center; font-family:var(--mono); font-size:11px; color:var(--gray-500); margin-top:24px; }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="topbar">
-    <div class="titles">
-      <span class="eyebrow">Weight plate calculator</span>
-      <h1>Plates</h1>
-      <span class="sub" id="unitLabel">kg · European</span>
-    </div>
-    <button id="configBtn" class="btn-ghost" aria-label="Settings"><span class="glyph">⚙</span></button>
+    <span class="eyebrow">Xenom.global · Decathlon</span>
+    <h1>Scorecards</h1>
+    <span class="sub">Select an event to score</span>
   </div>
 
-  <!-- PLATES -->
-  <section class="card">
-    <div class="head">
-      <span class="eyebrow">Plates</span>
-      <button id="clearBtn" class="btn-warn" style="padding:7px 12px;font-size:12px;"><span class="glyph">✕</span> Clear all</button>
-    </div>
-    <div class="plates" id="plates"></div>
-  </section>
+  <div class="event-grid">
+    <a class="event-card" href="snatch.html">
+      <span class="num">001</span>
+      <div class="info">
+        <div class="name">Snatch RM</div>
+        <div class="desc">Weight plate calculator · kg/lb</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
 
-  <!-- BAR -->
-  <section class="card">
-    <div class="head"><span class="eyebrow">Bar</span></div>
-    <div class="bar-row">
-      <div class="seg small" id="barGender"></div>
-      <span class="bar-weight-label" id="barWeightLabel"></span>
-    </div>
-  </section>
+    <a class="event-card" href="hspu.html">
+      <span class="num">002</span>
+      <div class="info">
+        <div class="name">HSPU</div>
+        <div class="desc">6 rounds · sum of good reps</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
 
-  <!-- RESULT -->
-  <section class="card result">
-    <div class="big"><span id="total">0</span><span class="unit" id="totalUnit">kg</span></div>
-    <div class="caption">total on the bar</div>
-    <div class="alt" id="totalAlt"></div>
-    <div class="divider"></div>
-    <div class="sumline"><span class="k">Plates (each side)</span><span class="v" id="sPlates">0</span></div>
-    <div class="sumline"><span class="k">Plates × 2 (both sides)</span><span class="v" id="sDouble">0</span></div>
-    <div class="sumline"><span class="k">Bar</span><span class="v" id="sBar">0</span></div>
-    <div class="sumline"><span class="k">Total (plates ×2 + bar)</span><span class="v mono-serif hi" id="sTotal">0</span></div>
-    <div class="equation" id="equation"></div>
-  </section>
+    <a class="event-card" href="c2b.html">
+      <span class="num">003</span>
+      <div class="info">
+        <div class="name">C2B</div>
+        <div class="desc">8 rounds · sum of good reps</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
 
-  <!-- MEMORY -->
-  <section class="card mem-card">
-    <div class="head">
-      <span class="eyebrow">Memory</span>
-      <span class="v" id="memVal" style="font-family:var(--mono);color:var(--olive);">—</span>
-    </div>
-    <div id="memEmpty" class="mem-empty">No value held. Tap “Hold” to store the current total.</div>
-    <div id="memSum" class="sumline" style="display:none;">
-      <span class="k">Current + Memory</span>
-      <span class="v mem" id="memSumVal">0</span>
-    </div>
-    <div class="divider"></div>
-    <div class="btnrow">
-      <button id="holdBtn" class="btn-olive"><span class="glyph">⬇</span> Hold current</button>
-      <button id="clearMemBtn" class="btn-warn"><span class="glyph">✕</span> Clear memory</button>
-    </div>
-  </section>
-
-  <!-- HISTORY -->
-  <section class="card">
-    <div class="head">
-      <span class="eyebrow">Previous selections</span>
-      <button id="clearHistBtn" class="btn-ghost" style="padding:6px 10px;font-size:11.5px;">Clear</button>
-    </div>
-    <div id="history"></div>
-  </section>
-
-  <p class="foot">Tap plates to add · tap again to remove · values saved on this device</p>
-</div>
-
-<!-- CONFIG MODAL -->
-<div class="modal" id="configModal">
-  <div class="sheet">
-    <div class="head">
-      <h2>Settings</h2>
-      <button class="close" id="configClose" aria-label="Close">✕</button>
-    </div>
-
-    <div class="section-label">Units</div>
-    <div class="seg" id="cfgUnit" style="margin-bottom:16px;"></div>
-
-    <div class="section-label" style="margin-top:18px;">Plates</div>
-    <div class="cfg-plates" id="cfgPlates"></div>
-    <button id="addPlateBtn" class="btn-ghost add" style="margin-top:10px;"><span class="glyph">＋</span> Add plate</button>
-
-    <div class="section-label" style="margin-top:20px;">Bar</div>
-    <div class="cfg-row">
-      <label>Male bar weight</label>
-      <input type="number" id="cfgBarMale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="20">
-    </div>
-    <div class="cfg-row">
-      <label>Female bar weight</label>
-      <input type="number" id="cfgBarFemale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="15">
-    </div>
-
-    <div class="section-label" style="margin-top:20px;">Appearance</div>
-    <div class="seg" id="cfgTheme" style="margin-bottom:16px;"></div>
-
-    <div class="section-label" style="margin-top:20px;">Data</div>
-    <div class="btnrow" style="margin-top:4px;">
-      <button id="resetDefaultsBtn" class="btn-warn"><span class="glyph">↺</span> Reset to defaults</button>
-    </div>
-    <p style="font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:12px;">
-      Reset restores the default plate list, bars, and units. Your held memory and selection history are kept.
-    </p>
+    <a class="event-card" href="lunges.html">
+      <span class="num">004</span>
+      <div class="info">
+        <div class="name">Lunges</div>
+        <div class="desc">12 rounds · sum of good reps</div>
+      </div>
+      <span class="arrow">→</span>
+    </a>
   </div>
+
+  <p class="foot">Xenom.global decathlon scorecards · values saved on this device</p>
 </div>
-
-<script>
-(function () {
-  "use strict";
-
-  // ---------- DEFAULTS ----------
-  var DEFAULTS = {
-    unit: "kg",
-    plates: [
-      { label: "25",   value: 25   },
-      { label: "15",   value: 15   },
-      { label: "10",   value: 10   },
-      { label: "5",    value: 5    },
-      { label: "5s",   value: 5    },
-      { label: "2.5",  value: 2.5  },
-      { label: "2",    value: 2    },
-      { label: "1.5",  value: 1.5  }
-    ],
-    bars: { male: 20, female: 15 }
-  };
-
-  var LS_KEY = "plates.config.v1";
-  var LS_MEM = "plates.memory.v1";
-  var LS_HIST = "plates.history.v1";
-  var LS_THEME = "plates.theme.v1";
-  var LS_SELECTED = "plates.selected.v1";
-  var LS_BAR = "plates.bar.v1";
-
-  // ---------- STATE ----------
-  var config = load(LS_KEY, null) || clone(DEFAULTS);
-  // migrate old bar format: { male: [20, 15], female: [15, 10] } → { male: 20, female: 15 }
-  if (config.bars && Array.isArray(config.bars.male)) {
-    config.bars.male = config.bars.male[0] || 20;
-    config.bars.female = (config.bars.female && config.bars.female[0]) || 15;
-    save(LS_KEY, config);
-  }
-  var selected = load(LS_SELECTED, {});   // { "25": 1, "5": 1 }  (each plate on/off, one of each)
-  var barSel = load(LS_BAR, { gender: "male" });
-  var memory = load(LS_MEM, null);        // number | null
-  var history = load(LS_HIST, []);        // array of snapshots
-  var themeMode = load(LS_THEME, "auto"); // auto | light | dark
-
-  // ---------- HELPERS ----------
-  function clone(o){ return JSON.parse(JSON.stringify(o)); }
-  function load(key, fallback){
-    try {
-      var raw = localStorage.getItem(key);
-      if (raw == null) return fallback;
-      return JSON.parse(raw);
-    } catch(e){ return fallback; }
-  }
-  function save(key, val){
-    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){}
-  }
-  function fmt(n){
-    if (n == null || isNaN(n)) return "0";
-    var r = Math.round(n * 100) / 100;
-    return (Math.abs(r % 1) < 1e-9) ? String(Math.round(r)) : String(r);
-  }
-  function unit(){ return config.unit; }
-  function unitLabel(){ return config.unit === "kg" ? "kg · European" : "lb · US"; }
-
-  // ---------- DERIVED VALUES ----------
-  function plateSum(){
-    var s = 0;
-    for (var i = 0; i < config.plates.length; i++){
-      var p = config.plates[i];
-      var c = selected[p.label] || 0;
-      s += c * p.value;
-    }
-    return s;
-  }
-  function barValue(){
-    var v = config.bars[barSel.gender];
-    return (typeof v === "number" && !isNaN(v)) ? v : 0;
-  }
-  function total(){ return plateSum() * 2 + barValue(); }
-
-  // ---------- THEME ----------
-  function applyTheme(){
-    var dark = themeMode === "dark" ||
-      (themeMode === "auto" && window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
-    document.documentElement.classList.toggle("dark", dark);
-    var meta = document.querySelector('meta[name=theme-color]');
-    if (meta) meta.setAttribute("content", dark ? "#121211" : "#FAF9F5");
-  }
-  // dark theme overrides (CSS media query handles auto; class forces it)
-  var styleEl = document.createElement("style");
-  styleEl.textContent =
-    "html.dark{--ivory:#121211;--white:#1C1C1A;--slate:#ECEAE2;--clay:#E08A6C;--olive:#93A878;" +
-    "--rust:#D06A5E;--oat:#2A2A26;--gray-150:#232320;--gray-300:#3A3A35;--gray-500:#8A897F;--gray-700:#ECEAE2;" +
-    "--tint-clay:rgba(224,138,108,.14);--tint-olive:rgba(147,168,120,.18);--tint-rust:rgba(208,106,94,.18);--tint-oat:rgba(42,42,38,.6);}" +
-    "html.dark body{background:var(--ivory);color:var(--gray-700);}";
-  document.head.appendChild(styleEl);
-
-  // ---------- PWA MANIFEST (inline blob, for installability) ----------
-  (function injectManifest(){
-    var link = document.getElementById("manifest");
-    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512'>" +
-      "<rect width='512' height='512' rx='96' fill='%23FAF9F5'/>" +
-      "<circle cx='256' cy='256' r='150' fill='none' stroke='%23D97757' stroke-width='40'/>" +
-      "<circle cx='256' cy='256' r='70' fill='none' stroke='%23788C5D' stroke-width='30'/>" +
-      "<rect x='120' y='300' width='272' height='36' rx='18' fill='%23141413'/></svg>";
-    var b64 = btoa(unescape(encodeURIComponent(svg)));
-    var manifest = {
-      name: "Plates — weight plate calculator",
-      short_name: "Plates",
-      description: "Calculate barbell load from plates, bar, and memory.",
-      start_url: ".",
-      display: "standalone",
-      background_color: "#FAF9F5",
-      theme_color: "#FAF9F5",
-      icons: [
-        { src: "data:image/svg+xml;base64," + b64, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-        { src: "data:image/svg+xml;base64," + b64, sizes: "192x192", type: "image/svg+xml", purpose: "any" }
-      ]
-    };
-    var blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-    link.href = URL.createObjectURL(blob);
-  })();
-
-  // ---------- RENDER: PLATES ----------
-  function renderPlates(){
-    var wrap = document.getElementById("plates");
-    wrap.innerHTML = "";
-    config.plates.forEach(function(p){
-      var el = document.createElement("div");
-      el.className = "plate " + (selected[p.label] ? "on" : "off");
-      el.setAttribute("role", "button");
-      el.setAttribute("aria-pressed", selected[p.label] ? "true" : "false");
-      el.dataset.label = p.label;
-      el.innerHTML =
-        (selected[p.label] ? '<span class="badge">✓</span>' : "") +
-        '<span class="glyph">◉</span>' +
-        '<span class="val">' + p.label + "</span>" +
-        '<span class="cnt">' + (selected[p.label] ? (p.value + " on") : "off") + "</span>";
-      el.addEventListener("click", function(){ togglePlate(p.label); });
-      wrap.appendChild(el);
-    });
-  }
-
-  // ---------- RENDER: BAR ----------
-  function renderBar(){
-    renderSeg("barGender", ["male", "female"], barSel.gender, function(v){
-      barSel.gender = v;
-      save(LS_BAR, barSel); render();
-    });
-    document.getElementById("barWeightLabel").textContent = fmt(barValue()) + " " + unit();
-  }
-  function renderSeg(id, options, current, onPick){
-    var wrap = document.getElementById(id);
-    wrap.innerHTML = "";
-    options.forEach(function(o){
-      var b = document.createElement("button");
-      b.textContent = o;
-      if (String(o) === String(current)) b.className = "on";
-      b.addEventListener("click", function(){ onPick(o); renderSeg(id, options, o, onPick); });
-      wrap.appendChild(b);
-    });
-  }
-
-  // ---------- RENDER: RESULT ----------
-  function renderResult(){
-    var ps = plateSum(), dbl = ps * 2, bar = barValue(), tot = dbl + bar;
-    document.getElementById("total").textContent = fmt(tot);
-    document.getElementById("totalUnit").textContent = unit();
-    document.getElementById("sPlates").textContent = fmt(ps) + " " + unit();
-    document.getElementById("sDouble").textContent = fmt(dbl) + " " + unit();
-    document.getElementById("sBar").textContent = fmt(bar) + " " + unit();
-    document.getElementById("sTotal").textContent = fmt(tot) + " " + unit();
-
-    // equation: each plate is on/off (one of each); ×2 means "both sides of the bar"
-    var parts = [];
-    config.plates.forEach(function(p){
-      if (selected[p.label]) parts.push(p.label);
-    });
-    var eq = parts.length
-      ? ("[" + parts.join(" + ") + " per side] × 2 sides + bar " + fmt(bar) + "  =  " + fmt(tot) + " " + unit())
-      : ("no plates · bar " + fmt(bar) + "  =  " + fmt(tot) + " " + unit());
-    document.getElementById("equation").textContent = eq;
-
-    // alt unit
-    var alt = "";
-    if (config.unit === "kg") alt = "≈ " + fmt(tot * 2.20462) + " lb";
-    else alt = "≈ " + fmt(tot / 2.20462) + " kg";
-    document.getElementById("totalAlt").textContent = alt;
-    document.getElementById("unitLabel").textContent = unitLabel();
-  }
-
-  // ---------- RENDER: MEMORY ----------
-  function renderMemory(){
-    var has = memory != null;
-    document.getElementById("memVal").textContent = has ? fmt(memory) + " " + unit() : "—";
-    document.getElementById("memEmpty").style.display = has ? "none" : "block";
-    document.getElementById("memSum").style.display = has ? "flex" : "none";
-    if (has){
-      document.getElementById("memSumVal").textContent = fmt(total() + memory) + " " + unit();
-    }
-    document.getElementById("clearMemBtn").disabled = !has;
-  }
-
-  // ---------- RENDER: HISTORY ----------
-  function renderHistory(){
-    var wrap = document.getElementById("history");
-    wrap.innerHTML = "";
-    if (!history.length){
-      wrap.innerHTML = '<div class="hist-empty">No previous selections yet. “Clear all” saves the current load here.</div>';
-      return;
-    }
-    history.slice().reverse().forEach(function(h, i){
-      var idx = history.length - 1 - i;
-      var item = document.createElement("div");
-      item.className = "hist-item";
-      var detail = h.plates.length
-        ? h.plates.map(function(x){ return x.label; }).join(" + ")
-        : "no plates";
-      item.innerHTML =
-        '<div class="meta">' +
-          '<div class="top"><span class="tot">' + fmt(h.total) + '</span><span class="unit">' + h.unit + '</span></div>' +
-          '<div class="detail">' + detail + ' · bar ' + h.bar + " " + h.unit + "</div>" +
-          '<div class="time">' + new Date(h.ts).toLocaleString() + "</div>" +
-        "</div>" +
-        '<div class="acts">' +
-          '<button data-act="restore" data-idx="' + idx + '" title="Restore">↩</button>' +
-          '<button data-act="del" data-idx="' + idx + '" title="Delete">✕</button>' +
-        "</div>";
-      wrap.appendChild(item);
-    });
-    wrap.querySelectorAll("button[data-act=restore]").forEach(function(b){
-      b.addEventListener("click", function(){ restoreHistory(parseInt(b.dataset.idx, 10)); });
-    });
-    wrap.querySelectorAll("button[data-act=del]").forEach(function(b){
-      b.addEventListener("click", function(){
-        history.splice(parseInt(b.dataset.idx, 10), 1);
-        save(LS_HIST, history); renderHistory();
-      });
-    });
-  }
-
-  // ---------- ACTIONS ----------
-  function togglePlate(label){
-    var count = selected[label] || 0;
-    if (count > 0) delete selected[label];
-    else selected[label] = 1;
-    save(LS_SELECTED, selected);
-    renderPlates(); renderResult(); renderMemory();
-  }
-
-  function clearAll(){
-    // push current to history if there's anything to remember
-    var ps = plateSum();
-    if (ps > 0 || barValue() > 0){
-      pushHistory();
-    }
-    selected = {};
-    save(LS_SELECTED, selected);
-    renderPlates(); renderResult(); renderMemory(); renderHistory();
-  }
-
-  function pushHistory(){
-    var plates = [];
-    config.plates.forEach(function(p){
-      var c = selected[p.label] || 0;
-      if (c) plates.push({ label: p.label, value: p.value, count: c });
-    });
-    history.push({
-      ts: Date.now(),
-      unit: unit(),
-      plates: plates,
-      bar: barValue(),
-      gender: barSel.gender,
-      total: total()
-    });
-    if (history.length > 60) history = history.slice(-60);
-    save(LS_HIST, history);
-  }
-
-  function restoreHistory(idx){
-    var h = history[idx];
-    if (!h) return;
-    selected = {};
-    (h.plates || []).forEach(function(x){ selected[x.label] = x.count; });
-    barSel.gender = h.gender || "male";
-    save(LS_SELECTED, selected);
-    save(LS_BAR, barSel);
-    render();
-  }
-
-  function holdMemory(){
-    memory = total();
-    save(LS_MEM, memory);
-    renderMemory();
-  }
-  function clearMemory(){
-    memory = null;
-    save(LS_MEM, memory);
-    renderMemory();
-  }
-
-  // ---------- CONFIG MODAL ----------
-  function openConfig(){
-    renderConfig();
-    document.getElementById("configModal").classList.add("open");
-  }
-  function closeConfig(){
-    document.getElementById("configModal").classList.remove("open");
-  }
-  function renderConfig(){
-    renderSeg("cfgUnit", ["kg", "lb"], config.unit, function(v){
-      config.unit = v; save(LS_KEY, config); render();
-    });
-    // plates
-    var wrap = document.getElementById("cfgPlates");
-    wrap.innerHTML = "";
-    config.plates.forEach(function(p, i){
-      var row = document.createElement("div");
-      row.className = "cfg-plate";
-      var lab = document.createElement("input");
-      lab.type = "text"; lab.value = p.label; lab.placeholder = "label";
-      lab.addEventListener("input", function(){
-        var oldLabel = p.label;
-        p.label = lab.value.trim() || oldLabel;
-        if (p.label !== oldLabel){
-          // migrate selection count
-          if (selected[oldLabel] != null){
-            selected[p.label] = selected[oldLabel];
-            delete selected[oldLabel];
-            save(LS_SELECTED, selected);
-          }
-        }
-        save(LS_KEY, config); renderPlates(); renderResult();
-      });
-      var val = document.createElement("input");
-      val.type = "number"; val.step = "0.5"; val.value = p.value;
-      val.addEventListener("input", function(){
-        p.value = parseFloat(val.value) || 0;
-        save(LS_KEY, config); renderPlates(); renderResult();
-      });
-      var del = document.createElement("button");
-      del.className = "del"; del.textContent = "✕"; del.title = "Remove plate";
-      del.addEventListener("click", function(){
-        config.plates.splice(i, 1);
-        delete selected[p.label];
-        save(LS_KEY, config); save(LS_SELECTED, selected);
-        renderConfig(); renderPlates(); renderResult();
-      });
-      row.appendChild(lab); row.appendChild(val); row.appendChild(del);
-      wrap.appendChild(row);
-    });
-    // bars
-    document.getElementById("cfgBarMale").value = config.bars.male;
-    document.getElementById("cfgBarFemale").value = config.bars.female;
-    // theme
-    renderSeg("cfgTheme", ["light", "auto", "dark"], themeMode, function(v){
-      themeMode = v; save(LS_THEME, themeMode); applyTheme();
-    });
-  }
-
-  // ---------- WIRING ----------
-  function wire(){
-    document.getElementById("configBtn").addEventListener("click", openConfig);
-    document.getElementById("configClose").addEventListener("click", closeConfig);
-    document.getElementById("configModal").addEventListener("click", function(e){
-      if (e.target === this) closeConfig();
-    });
-
-    document.getElementById("clearBtn").addEventListener("click", clearAll);
-    document.getElementById("holdBtn").addEventListener("click", holdMemory);
-    document.getElementById("clearMemBtn").addEventListener("click", clearMemory);
-    document.getElementById("clearHistBtn").addEventListener("click", function(){
-      history = []; save(LS_HIST, history); renderHistory();
-    });
-
-    document.getElementById("addPlateBtn").addEventListener("click", function(){
-      var n = config.plates.length + 1;
-      config.plates.push({ label: String(n), value: n });
-      save(LS_KEY, config); renderConfig(); renderPlates(); renderResult();
-    });
-
-    document.getElementById("cfgBarMale").addEventListener("change", function(){
-      config.bars.male = parseFloat(this.value) || 0;
-      save(LS_KEY, config); renderBar(); renderResult();
-    });
-    document.getElementById("cfgBarFemale").addEventListener("change", function(){
-      config.bars.female = parseFloat(this.value) || 0;
-      save(LS_KEY, config); renderBar(); renderResult();
-    });
-
-    document.getElementById("resetDefaultsBtn").addEventListener("click", function(){
-      config = clone(DEFAULTS);
-      save(LS_KEY, config);
-      selected = {};
-      save(LS_SELECTED, selected);
-      barSel = { gender: "male" };
-      save(LS_BAR, barSel);
-      render(); renderConfig();
-    });
-
-    // system theme changes while in auto mode
-    if (window.matchMedia){
-      var mq = window.matchMedia("(prefers-color-scheme: dark)");
-      var listener = function(){ if (themeMode === "auto") applyTheme(); };
-      if (mq.addEventListener) mq.addEventListener("change", listener);
-      else if (mq.addListener) mq.addListener(listener);
-    }
-  }
-
-  // ---------- BOOT ----------
-  function render(){
-    renderPlates(); renderBar(); renderResult(); renderMemory(); renderHistory();
-  }
-  applyTheme();
-  render();
-  wire();
-})();
-</script>
 </body>
 </html>
