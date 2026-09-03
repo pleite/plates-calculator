@@ -44,19 +44,28 @@
   .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
-  .ladder{display:flex;flex-direction:column;gap:8px;}
-  .lrow{display:grid;grid-template-columns:80px 1fr 64px;gap:10px;align-items:center;
-    padding:10px 12px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);
-    transition:background .12s,border-color .12s;}
-  .lrow.done{background:var(--tint-olive);border-color:var(--olive);}
-  .lrow .w{font-family:var(--mono);font-size:15px;font-weight:600;}
-  .lrow.done .w{color:var(--olive);}
-  .lrow .ex{font-size:14px;}
-  .lrow .ex .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
-  .lrow .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
+  .nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+  .nav button{font-family:var(--mono);font-size:18px;padding:8px 16px;border-radius:var(--radius-row);
+    border:var(--border);background:var(--white);color:var(--gray-700);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .nav button:active{transform:scale(.95);}
+  .nav button:disabled{opacity:.3;}
+  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:120px;text-align:center;}
+  .step{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);padding:14px;}
+  .step .shead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .step .sw{font-family:var(--mono);font-size:15px;font-weight:600;}
+  .step .ssum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
+  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:9px 0;}
+  .exline .elabel{font-size:15px;}
+  .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
-  .lrow .reps:focus{outline:none;border-color:var(--clay);}
+  .exline .reps:focus{outline:none;border-color:var(--clay);}
+  .progress{display:flex;gap:5px;margin-top:12px;}
+  .progress .dot{flex:1;height:5px;border-radius:3px;background:var(--gray-300);}
+  .progress .dot.done{background:var(--olive);}
+  .progress .dot.cur{background:var(--clay);}
   .amrap{margin-top:14px;padding:12px;border:var(--border);border-radius:var(--radius-row);
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -73,7 +82,6 @@
     transition:transform .06s ease;}
   button:active{transform:scale(.97);}
   .btn-warn{background:var(--tint-rust);border-color:var(--rust);color:var(--rust);}
-  .btn-ghost{background:transparent;}
   .foot{text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:8px;}
   .foot a{color:var(--gray-500);text-decoration:none;}
 </style>
@@ -90,16 +98,23 @@
 
   <section class="card result">
     <div class="big"><span id="total">0</span><span class="unit">reps</span></div>
-    <div class="caption">total reps (ladder + AMRAP)</div>
+    <div class="caption">total reps</div>
     <div class="detail" id="detail"></div>
   </section>
 
+  <div class="nav">
+    <button id="prevBtn" aria-label="Previous step">←</button>
+    <span class="round-label" id="navLabel">Step 1 / 5</span>
+    <button id="nextBtn" aria-label="Next step">→</button>
+  </div>
+
   <section class="card">
     <div class="head">
-      <span class="eyebrow">Ladder</span>
+      <span class="eyebrow" id="cardTitle">60/35 kg</span>
       <button id="clearBtn" class="btn-warn" style="padding:7px 12px;font-size:12px;">✕ Clear all</button>
     </div>
-    <div class="ladder" id="ladder"></div>
+    <div class="step" id="stepCard"></div>
+    <div class="progress" id="progress"></div>
     <div class="amrap">
       <div class="amrap-head">
         <span class="amrap-label">AMRAP · 100/70 kg</span>
@@ -112,7 +127,7 @@
     </div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · Enter reps per weight · all reps count</p>
+  <p class="foot"><a href="index.html">← All events</a> · Enter reps · previous steps auto-complete</p>
 </div>
 
 <script>
@@ -125,79 +140,112 @@
     {weight:"90/60",target:4},
     {weight:"95/65",target:2}
   ];
+  var STEPS=LADDER.length;
   var LS_KEY="event009.ladder.v1";
 
   function defaultState(){
     var s={ladder:[],amrap:0};
-    for(var i=0;i<LADDER.length;i++) s.ladder.push(0);
+    for(var i=0;i<STEPS;i++) s.ladder.push(0);
     return s;
   }
   function load(key,fb){
     try{var raw=localStorage.getItem(key);if(raw==null)return fb;
       var p=JSON.parse(raw);
-      if(!p||!Array.isArray(p.ladder)||p.ladder.length!==LADDER.length)return fb;
+      if(!p||!Array.isArray(p.ladder)||p.ladder.length!==STEPS)return fb;
       return p;}
     catch(e){return fb;}
   }
   function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
   var state=load(LS_KEY,defaultState());
+  var currentStep=0;
 
-  function totalReps(){
-    var t=state.amrap||0;
-    for(var i=0;i<LADDER.length;i++) t+=(state.ladder[i]||0);
-    return t;
+  function stepHasValue(i){
+    return (state.ladder[i]||0)>0;
+  }
+  function stepReps(i){
+    if(i<currentStep) return LADDER[i].target;
+    if(i===currentStep) return state.ladder[i]||0;
+    return 0;
   }
   function ladderReps(){
     var t=0;
-    for(var i=0;i<LADDER.length;i++) t+=(state.ladder[i]||0);
+    for(var i=0;i<STEPS;i++) t+=stepReps(i);
     return t;
   }
-  function isRowDone(i){
-    return (state.ladder[i]||0)>=LADDER[i].target;
+  function totalReps(){
+    return ladderReps()+(state.amrap||0);
+  }
+  function stepsDone(){
+    var n=0;
+    for(var i=0;i<currentStep;i++) n++;
+    if(stepHasValue(currentStep)) n++;
+    return n;
   }
 
   function render(){
-    var wrap=document.getElementById("ladder");
-    wrap.innerHTML="";
-    for(var i=0;i<LADDER.length;i++){
-      (function(i){
-        var d=LADDER[i];
-        var row=document.createElement("div");
-        row.className="lrow"+(isRowDone(i)?" done":"");
-        var w=document.createElement("span");
-        w.className="w";w.textContent=d.weight+" kg";
-        var ex=document.createElement("span");
-        ex.className="ex";
-        ex.innerHTML="Cleans <span class='target'>"+d.target+"</span>";
-        var inp=document.createElement("input");
-        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
-        inp.value=state.ladder[i]||"";inp.placeholder="0";
-        inp.setAttribute("aria-label","Cleans at "+d.weight+" kg");
-        inp.addEventListener("input",function(){
-          state.ladder[i]=parseInt(inp.value,10)||0;
-          save();render();
-        });
-        row.appendChild(w);row.appendChild(ex);row.appendChild(inp);
-        wrap.appendChild(row);
-      })(i);
+    var card=document.getElementById("stepCard");
+    card.innerHTML="";
+    var d=LADDER[currentStep];
+    var head=document.createElement("div");
+    head.className="shead";
+    var w=document.createElement("span");
+    w.className="sw";w.textContent=d.weight+" kg";
+    var sum=document.createElement("span");
+    sum.className="ssum";sum.textContent=(state.ladder[currentStep]||0)+" reps";
+    head.appendChild(w);head.appendChild(sum);
+    card.appendChild(head);
+    var line=document.createElement("div");
+    line.className="exline";
+    var lab=document.createElement("span");
+    lab.className="elabel";
+    lab.innerHTML="Cleans <span class='target'>"+d.target+"</span>";
+    var inp=document.createElement("input");
+    inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
+    inp.value=state.ladder[currentStep]||"";inp.placeholder="0";
+    inp.setAttribute("aria-label","Cleans at "+d.weight+" kg");
+    inp.addEventListener("input",function(){
+      state.ladder[currentStep]=parseInt(inp.value,10)||0;
+      save();render();
+    });
+    line.appendChild(lab);line.appendChild(inp);
+    card.appendChild(line);
+
+    var prog=document.getElementById("progress");
+    prog.innerHTML="";
+    for(var i=0;i<STEPS;i++){
+      var dot=document.createElement("span");
+      dot.className="dot"+(i<currentStep?" done":(i===currentStep?" cur":""));
+      prog.appendChild(dot);
     }
     document.getElementById("amrapInput").value=state.amrap||"";
     renderTotal();
+    renderNav();
   }
   function renderTotal(){
-    var t=totalReps();
-    document.getElementById("total").textContent=t;
+    document.getElementById("total").textContent=totalReps();
     document.getElementById("detail").textContent=ladderReps()+" ladder · "+(state.amrap||0)+" AMRAP";
+    document.getElementById("cardTitle").textContent=LADDER[currentStep].weight+" kg";
     document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
+  }
+  function renderNav(){
+    document.getElementById("navLabel").textContent="Step "+(currentStep+1)+" / "+STEPS;
+    document.getElementById("prevBtn").disabled=currentStep===0;
+    document.getElementById("nextBtn").disabled=currentStep===STEPS-1;
   }
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
     save();renderTotal();
   });
+  document.getElementById("prevBtn").addEventListener("click",function(){
+    if(currentStep>0){currentStep--;render();}
+  });
+  document.getElementById("nextBtn").addEventListener("click",function(){
+    if(currentStep<STEPS-1){currentStep++;render();}
+  });
   document.getElementById("clearBtn").addEventListener("click",function(){
-    state=defaultState();save();render();
+    state=defaultState();currentStep=0;save();render();
   });
   render();
 })();

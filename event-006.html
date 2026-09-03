@@ -44,23 +44,29 @@
   .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
-  .rounds{display:flex;flex-direction:column;gap:10px;}
-  .round{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);
-    padding:12px;transition:background .12s,border-color .12s;}
-  .round.done{background:var(--tint-olive);border-color:var(--olive);}
-  .round .rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+  .nav button{font-family:var(--mono);font-size:18px;padding:8px 16px;border-radius:var(--radius-row);
+    border:var(--border);background:var(--white);color:var(--gray-700);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .nav button:active{transform:scale(.95);}
+  .nav button:disabled{opacity:.3;}
+  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:120px;text-align:center;}
+  .round{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);padding:14px;}
+  .round .rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .round .rnum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
-  .round.done .rnum{color:var(--olive);}
   .round .rsum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
-  .round.done .rsum{color:var(--olive);}
-  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:7px 0;}
+  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:9px 0;}
   .exline + .exline{border-top:1px dashed var(--gray-300);}
-  .exline .elabel{font-size:14px;}
+  .exline .elabel{font-size:15px;}
   .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
-  .exline .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
+  .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .exline .reps:focus{outline:none;border-color:var(--clay);}
+  .progress{display:flex;gap:5px;margin-top:12px;}
+  .progress .dot{flex:1;height:5px;border-radius:3px;background:var(--gray-300);}
+  .progress .dot.done{background:var(--olive);}
+  .progress .dot.cur{background:var(--clay);}
   .amrap{margin-top:14px;padding:12px;border:var(--border);border-radius:var(--radius-row);
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -77,7 +83,6 @@
     transition:transform .06s ease;}
   button:active{transform:scale(.97);}
   .btn-warn{background:var(--tint-rust);border-color:var(--rust);color:var(--rust);}
-  .btn-ghost{background:transparent;}
   .foot{text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:8px;}
   .foot a{color:var(--gray-500);text-decoration:none;}
 </style>
@@ -94,16 +99,23 @@
 
   <section class="card result">
     <div class="big"><span id="total">0</span><span class="unit">reps</span></div>
-    <div class="caption">total reps (rounds + AMRAP)</div>
+    <div class="caption">total reps</div>
     <div class="detail" id="detail"></div>
   </section>
 
+  <div class="nav">
+    <button id="prevBtn" aria-label="Previous round">←</button>
+    <span class="round-label" id="navLabel">Round 1 / 3</span>
+    <button id="nextBtn" aria-label="Next round">→</button>
+  </div>
+
   <section class="card">
     <div class="head">
-      <span class="eyebrow">3 Rounds</span>
+      <span class="eyebrow" id="cardTitle">Round 1</span>
       <button id="clearBtn" class="btn-warn" style="padding:7px 12px;font-size:12px;">✕ Clear all</button>
     </div>
-    <div class="rounds" id="rounds"></div>
+    <div class="round" id="roundCard"></div>
+    <div class="progress" id="progress"></div>
     <div class="amrap">
       <div class="amrap-head">
         <span class="amrap-label">AMRAP · Chest to Bar</span>
@@ -116,7 +128,7 @@
     </div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · Enter reps per exercise · all reps count</p>
+  <p class="foot"><a href="index.html">← All events</a> · Enter reps · previous rounds auto-complete</p>
 </div>
 
 <script>
@@ -128,15 +140,16 @@
     {name:"DB Hang Snatches",target:10},
     {name:"Pull-Ups",target:10}
   ];
+  function roundTargetSum(){
+    var s=0;
+    for(var i=0;i<EXERCISES.length;i++) s+=EXERCISES[i].target;
+    return s;
+  }
   var LS_KEY="event006.rounds.v1";
 
   function defaultState(){
     var s={rounds:[],amrap:0};
-    for(var i=0;i<ROUNDS;i++){
-      var r={};
-      for(var j=0;j<EXERCISES.length;j++) r[EXERCISES[j].name]=0;
-      s.rounds.push(r);
-    }
+    for(var i=0;i<ROUNDS;i++) s.rounds.push({});
     return s;
   }
   function load(key,fb){
@@ -149,87 +162,106 @@
   function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
   var state=load(LS_KEY,defaultState());
+  var currentRound=0;
 
-  function roundReps(r){
-    var t=0;
-    for(var i=0;i<EXERCISES.length;i++) t+=(r[EXERCISES[i].name]||0);
-    return t;
+  function roundHasValue(i){
+    var r=state.rounds[i];
+    for(var k in r){ if((r[k]||0)>0) return true; }
+    return false;
+  }
+  function roundReps(i){
+    if(i<currentRound) return roundTargetSum();
+    if(i===currentRound){
+      var r=state.rounds[i],t=0;
+      for(var k in r) t+=(r[k]||0);
+      return t;
+    }
+    return 0;
   }
   function roundsTotal(){
-    var t=0,done=0;
-    for(var i=0;i<ROUNDS;i++){
-      t+=roundReps(state.rounds[i]);
-      if(roundReps(state.rounds[i])>0) done++;
-    }
-    return {total:t,rounds:done};
+    var t=0;
+    for(var i=0;i<ROUNDS;i++) t+=roundReps(i);
+    return t;
   }
   function totalReps(){
-    return roundsTotal().total+(state.amrap||0);
+    return roundsTotal()+(state.amrap||0);
   }
-  function isRoundDone(r){
-    for(var i=0;i<EXERCISES.length;i++){
-      if((r[EXERCISES[i].name]||0)>=EXERCISES[i].target) return true;
-    }
-    return false;
+  function roundsDone(){
+    var n=0;
+    for(var i=0;i<currentRound;i++) n++;
+    if(roundHasValue(currentRound)) n++;
+    return n;
   }
 
   function render(){
-    var wrap=document.getElementById("rounds");
-    wrap.innerHTML="";
+    var card=document.getElementById("roundCard");
+    card.innerHTML="";
+    var r=state.rounds[currentRound];
+    var head=document.createElement("div");
+    head.className="rhead";
+    var num=document.createElement("span");
+    num.className="rnum";num.textContent="Round "+(currentRound+1);
+    var sum=document.createElement("span");
+    var curSum=0;
+    for(var k in r) curSum+=(r[k]||0);
+    sum.className="rsum";sum.textContent=curSum+" reps";
+    head.appendChild(num);head.appendChild(sum);
+    card.appendChild(head);
+    for(var j=0;j<EXERCISES.length;j++){
+      (function(j){
+        var ex=EXERCISES[j];
+        var line=document.createElement("div");
+        line.className="exline";
+        var lab=document.createElement("span");
+        lab.className="elabel";
+        lab.innerHTML=ex.name+' <span class="target">'+ex.target+'</span>';
+        var inp=document.createElement("input");
+        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
+        inp.value=r[ex.name]||"";inp.placeholder="0";
+        inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
+        inp.addEventListener("input",function(){
+          state.rounds[currentRound][ex.name]=parseInt(inp.value,10)||0;
+          save();render();
+        });
+        line.appendChild(lab);line.appendChild(inp);
+        card.appendChild(line);
+      })(j);
+    }
+    var prog=document.getElementById("progress");
+    prog.innerHTML="";
     for(var i=0;i<ROUNDS;i++){
-      (function(i){
-        var r=state.rounds[i];
-        var el=document.createElement("div");
-        el.className="round"+(isRoundDone(r)?" done":"");
-        el.id="round-"+i;
-        var head=document.createElement("div");
-        head.className="rhead";
-        var num=document.createElement("span");
-        num.className="rnum";num.textContent="Round "+(i+1);
-        var sum=document.createElement("span");
-        sum.className="rsum";sum.textContent=roundReps(r)+" reps";
-        head.appendChild(num);head.appendChild(sum);
-        el.appendChild(head);
-        for(var j=0;j<EXERCISES.length;j++){
-          (function(j){
-            var ex=EXERCISES[j];
-            var line=document.createElement("div");
-            line.className="exline";
-            var lab=document.createElement("span");
-            lab.className="elabel";
-            lab.innerHTML=ex.name+' <span class="target">'+ex.target+'</span>';
-            var inp=document.createElement("input");
-            inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
-            inp.value=r[ex.name]||"";inp.placeholder="0";
-            inp.setAttribute("aria-label",ex.name+" round "+(i+1));
-            inp.addEventListener("input",function(){
-              state.rounds[i][ex.name]=parseInt(inp.value,10)||0;
-              save();render();
-            });
-            line.appendChild(lab);line.appendChild(inp);
-            el.appendChild(line);
-          })(j);
-        }
-        wrap.appendChild(el);
-      })(i);
+      var d=document.createElement("span");
+      d.className="dot"+(i<currentRound?" done":(i===currentRound?" cur":""));
+      prog.appendChild(d);
     }
     document.getElementById("amrapInput").value=state.amrap||"";
     renderTotal();
+    renderNav();
   }
   function renderTotal(){
-    var t=totalReps();
-    var rt=roundsTotal();
-    document.getElementById("total").textContent=t;
-    document.getElementById("detail").textContent=rt.total+" rounds · "+(state.amrap||0)+" AMRAP";
+    document.getElementById("total").textContent=totalReps();
+    document.getElementById("detail").textContent=roundsTotal()+" rounds · "+(state.amrap||0)+" AMRAP";
+    document.getElementById("cardTitle").textContent="Round "+(currentRound+1);
     document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
+  }
+  function renderNav(){
+    document.getElementById("navLabel").textContent="Round "+(currentRound+1)+" / "+ROUNDS;
+    document.getElementById("prevBtn").disabled=currentRound===0;
+    document.getElementById("nextBtn").disabled=currentRound===ROUNDS-1;
   }
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
     save();renderTotal();
   });
+  document.getElementById("prevBtn").addEventListener("click",function(){
+    if(currentRound>0){currentRound--;render();}
+  });
+  document.getElementById("nextBtn").addEventListener("click",function(){
+    if(currentRound<ROUNDS-1){currentRound++;render();}
+  });
   document.getElementById("clearBtn").addEventListener("click",function(){
-    state=defaultState();save();render();
+    state=defaultState();currentRound=0;save();render();
   });
   render();
 })();

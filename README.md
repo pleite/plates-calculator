@@ -12,12 +12,11 @@ Open `index.html` in any browser, or install it as a home-screen app on iOS / An
 | `event-002.html` | 002 · Wall Walks + Rope Climbs | Ladder | +2 WW +1 RC per round, 8 min |
 | `event-004.html` | 004 · Barbell Cycling | AMRAP rounds | 12 DL + 9 FS + 6 S2OH + 3 Thr per round, 5 min |
 | `event-006.html` | 006 · Gymnastics Sprint | Rounds + AMRAP | 3×(15 T2R + 10 DB HS → 10 PU) + AMRAP C2B, 6 min |
-| `event-007.html` | 007 · Rhino | Best of attempts | 5RM Pull, heaviest load counts, 3 min |
 | `event-008.html` | 008 · Cardio Chipper | Chipper + AMRAP | 6-station chipper + AMRAP burpees, 12 min |
 | `event-009.html` | 009 · Clean Ladder | Ladder + AMRAP | 10→2 reps at ascending weights + AMRAP, 8 min |
 | `event-010.html` | 010 · Gym Triplet | AMRAP rounds | 6 HSPU + 8 PU + 12 Lunge per round, 12 min |
 
-Events 003 (Echo Bike), 005 (Endurance Double) are single-value events (calories / time) and don't need a scorecard.
+Events 003 (Echo Bike), 005 (Endurance Double), and 007 (Rhino) are single-value events (calories / time / max load) and don't need a scorecard.
 
 ## How it works
 
