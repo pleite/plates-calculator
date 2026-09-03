@@ -44,26 +44,32 @@
   .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
-  .nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+  .nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;}
   .nav button{font-family:var(--mono);font-size:18px;padding:8px 16px;border-radius:var(--radius-row);
     border:var(--border);background:var(--white);color:var(--gray-700);cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
   .nav button:active{transform:scale(.95);}
   .nav button:disabled{opacity:.3;}
-  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:120px;text-align:center;}
+  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:110px;text-align:center;}
   .round{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);padding:14px;}
   .round .rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .round .rnum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
   .round .rsum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
-  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:9px 0;}
+  .exline{padding:9px 0;}
   .exline + .exline{border-top:1px dashed var(--gray-300);}
+  .exline .etop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .exline .elabel{font-size:15px;}
   .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .exline .emax{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--olive);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .exline .emax:active{transform:scale(.95);}
   .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .exline .reps:focus{outline:none;border-color:var(--clay);}
-  .progress{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap;}
+  .exline .reps.full{border-color:var(--olive);color:var(--olive);}
+  .progress{display:flex;gap:5px;margin-top:14px;flex-wrap:wrap;}
   .progress .dot{width:22px;height:5px;border-radius:3px;background:var(--gray-300);}
   .progress .dot.done{background:var(--olive);}
   .progress .dot.cur{background:var(--clay);}
@@ -109,7 +115,7 @@
     <div class="progress" id="progress"></div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · → adds a round · previous rounds auto-complete</p>
+  <p class="foot"><a href="index.html">← All events</a> · → adds a round · earlier reps auto-complete</p>
 </div>
 
 <script>
@@ -126,58 +132,58 @@
     for(var i=0;i<EXERCISES.length;i++) s+=EXERCISES[i].target;
     return s;
   }
-  var LS_KEY="event004.rounds.v1";
+  var LS_KEY="event004.state.v2";
 
   function defaultState(){
-    return [{}]; // start with one round
+    return {rounds:[{}],cur:0};
   }
   function load(key,fb){
     try{var raw=localStorage.getItem(key);if(raw==null)return fb;
       var p=JSON.parse(raw);
-      if(!Array.isArray(p)||p.length<1)return fb;
+      if(!p||!Array.isArray(p.rounds)||p.rounds.length<1)return fb;
+      if(typeof p.cur!=="number"||p.cur<0||p.cur>=p.rounds.length) p.cur=p.rounds.length-1;
       return p;}
     catch(e){return fb;}
   }
   function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
   var state=load(LS_KEY,defaultState());
-  var currentRound=0; // 0-indexed
+  var currentRound=state.cur;
 
   function roundHasValue(i){
-    var r=state[i];
+    var r=state.rounds[i];
     for(var k in r){ if((r[k]||0)>0) return true; }
     return false;
   }
   function roundReps(i){
-    var n=state.length;
-    if(i<n-1) return roundTargetSum(); // all but the last round are complete
-    var r=state[i],t=0;
+    if(i<currentRound) return roundTargetSum();
+    var r=state.rounds[i],t=0;
     for(var k in r) t+=(r[k]||0);
     return t;
   }
   function totalReps(){
     var t=0;
-    for(var i=0;i<state.length;i++) t+=roundReps(i);
+    for(var i=0;i<state.rounds.length;i++) t+=roundReps(i);
     return t;
   }
   function roundsDone(){
-    // all rounds before the last are done; last counts if it has a value
-    var n=state.length;
-    var done=n-1;
-    if(roundHasValue(n-1)) done++;
+    var done=currentRound;
+    if(roundHasValue(currentRound)) done++;
     return done;
   }
 
   function addRound(){
-    state.push({});
-    currentRound=state.length-1;
+    state.rounds.push({});
+    currentRound=state.rounds.length-1;
+    state.cur=currentRound;
     save();render();
   }
 
   function render(){
+    state.cur=currentRound;
     var card=document.getElementById("roundCard");
     card.innerHTML="";
-    var r=state[currentRound];
+    var r=state.rounds[currentRound];
     var head=document.createElement("div");
     head.className="rhead";
     var num=document.createElement("span");
@@ -193,26 +199,42 @@
         var ex=EXERCISES[j];
         var line=document.createElement("div");
         line.className="exline";
+        var etop=document.createElement("div");
+        etop.className="etop";
         var lab=document.createElement("span");
         lab.className="elabel";
         lab.innerHTML=ex.name+' <span class="target">'+ex.target+'</span>';
+        var maxBtn=document.createElement("button");
+        maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+ex.target;
+        maxBtn.addEventListener("click",function(){
+          state.rounds[currentRound][ex.name]=ex.target;
+          save();render();
+        });
+        etop.appendChild(lab);etop.appendChild(maxBtn);
         var inp=document.createElement("input");
-        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
+        inp.className="reps"+((r[ex.name]||0)>=ex.target?" full":"");
+        inp.type="number";inp.min="0";inp.step="1";
         inp.value=r[ex.name]||"";inp.placeholder="0";
         inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
         inp.addEventListener("input",function(){
-          state[currentRound][ex.name]=parseInt(inp.value,10)||0;
+          var v=parseInt(inp.value,10)||0;
+          state.rounds[currentRound][ex.name]=v;
+          if(v>0){
+            for(var m=0;m<j;m++){
+              state.rounds[currentRound][EXERCISES[m].name]=EXERCISES[m].target;
+            }
+          }
           save();render();
         });
-        line.appendChild(lab);line.appendChild(inp);
+        line.appendChild(etop);line.appendChild(inp);
         card.appendChild(line);
       })(j);
     }
     var prog=document.getElementById("progress");
     prog.innerHTML="";
-    for(var i=0;i<state.length;i++){
+    for(var i=0;i<state.rounds.length;i++){
       var d=document.createElement("span");
-      d.className="dot"+(i<state.length-1?" done":(i===state.length-1?" cur":""));
+      d.className="dot"+(i<currentRound?" done":(i===currentRound?" cur":""));
       prog.appendChild(d);
     }
     renderTotal();
@@ -220,7 +242,7 @@
   }
   function renderTotal(){
     document.getElementById("total").textContent=totalReps();
-    document.getElementById("detail").textContent=roundsDone()+" of "+state.length+" rounds complete";
+    document.getElementById("detail").textContent=roundsDone()+" of "+state.rounds.length+" rounds complete";
     document.getElementById("cardTitle").textContent="Round "+(currentRound+1);
   }
   function renderNav(){
@@ -232,7 +254,7 @@
     if(currentRound>0){currentRound--;render();}
   });
   document.getElementById("nextBtn").addEventListener("click",function(){
-    if(currentRound<state.length-1){currentRound++;render();}
+    if(currentRound<state.rounds.length-1){currentRound++;render();}
     else{addRound();}
   });
   document.getElementById("clearBtn").addEventListener("click",function(){

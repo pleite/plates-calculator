@@ -44,27 +44,33 @@
   .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
-  .nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+  .nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;}
   .nav button{font-family:var(--mono);font-size:18px;padding:8px 16px;border-radius:var(--radius-row);
     border:var(--border);background:var(--white);color:var(--gray-700);cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
   .nav button:active{transform:scale(.95);}
   .nav button:disabled{opacity:.3;}
-  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:120px;text-align:center;}
+  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:110px;text-align:center;}
   .round{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);padding:14px;}
   .round .rhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .round .rnum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
   .round .rsum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
-  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:9px 0;}
+  .exline{padding:9px 0;}
   .exline + .exline{border-top:1px dashed var(--gray-300);}
+  .exline .etop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .exline .elabel{font-size:15px;}
   .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .exline .emax{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--olive);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .exline .emax:active{transform:scale(.95);}
   .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .exline .reps:focus{outline:none;border-color:var(--clay);}
-  .progress{display:flex;gap:5px;margin-top:12px;}
-  .progress .dot{flex:1;height:5px;border-radius:3px;background:var(--gray-300);}
+  .exline .reps.full{border-color:var(--olive);color:var(--olive);}
+  .progress{display:flex;gap:5px;margin-top:14px;flex-wrap:wrap;}
+  .progress .dot{width:22px;height:5px;border-radius:3px;background:var(--gray-300);}
   .progress .dot.done{background:var(--olive);}
   .progress .dot.cur{background:var(--clay);}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
@@ -96,7 +102,7 @@
 
   <div class="nav">
     <button id="prevBtn" aria-label="Previous round">←</button>
-    <span class="round-label" id="navLabel">Round 1 / 10</span>
+    <span class="round-label" id="navLabel">Round 1</span>
     <button id="nextBtn" aria-label="Next round">→</button>
   </div>
 
@@ -109,76 +115,82 @@
     <div class="progress" id="progress"></div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · Enter reps · previous rounds auto-complete</p>
+  <p class="foot"><a href="index.html">← All events</a> · → adds a round · earlier reps auto-complete</p>
 </div>
 
 <script>
 (function(){
   "use strict";
-  var ROUNDS=10;
+  var EXERCISES=[
+    {name:"Wall Walks",perRound:2},
+    {name:"Rope Climbs",perRound:1}
+  ];
   function roundTargets(i){ // i is 1-indexed
-    return [
-      {name:"Wall Walks",target:2*i},
-      {name:"Rope Climbs",target:i}
-    ];
+    var t=[];
+    for(var j=0;j<EXERCISES.length;j++) t.push(EXERCISES[j].perRound*i);
+    return t;
   }
   function roundTargetSum(i){
     var t=roundTargets(i),s=0;
-    for(var k=0;k<t.length;k++) s+=t[k].target;
+    for(var k=0;k<t.length;k++) s+=t[k];
     return s;
   }
-  var LS_KEY="event002.rounds.v1";
+  var LS_KEY="event002.state.v2";
 
   function defaultState(){
-    var s=[];
-    for(var i=1;i<=ROUNDS;i++) s.push({});
-    return s;
+    return {rounds:[{}],cur:0};
   }
   function load(key,fb){
     try{var raw=localStorage.getItem(key);if(raw==null)return fb;
       var p=JSON.parse(raw);
-      if(!Array.isArray(p)||p.length!==ROUNDS)return fb;
+      if(!p||!Array.isArray(p.rounds)||p.rounds.length<1)return fb;
+      if(typeof p.cur!=="number"||p.cur<0||p.cur>=p.rounds.length) p.cur=p.rounds.length-1;
       return p;}
     catch(e){return fb;}
   }
   function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
   var state=load(LS_KEY,defaultState());
-  var currentRound=0; // 0-indexed
+  var currentRound=state.cur;
 
   function roundHasValue(i){
-    var r=state[i];
+    var r=state.rounds[i];
     for(var k in r){ if((r[k]||0)>0) return true; }
     return false;
   }
+  // Rounds before the current one are always complete (full target).
   function roundReps(i){
-    // Rounds before current: full target. Current: entered. After: 0.
+    var n=state.rounds.length;
     if(i<currentRound) return roundTargetSum(i+1);
-    if(i===currentRound){
-      var r=state[i],t=0;
-      for(var k in r) t+=(r[k]||0);
-      return t;
-    }
-    return 0;
+    var r=state.rounds[i],t=0;
+    for(var k in r) t+=(r[k]||0);
+    return t;
   }
   function totalReps(){
     var t=0;
-    for(var i=0;i<ROUNDS;i++) t+=roundReps(i);
+    for(var i=0;i<state.rounds.length;i++) t+=roundReps(i);
     return t;
   }
   function roundsDone(){
-    var n=0;
-    for(var i=0;i<currentRound;i++) n++; // all before current are done
-    if(roundHasValue(currentRound)) n++; // current counts if any value entered
-    return n;
+    var n=state.rounds.length;
+    var done=currentRound; // all before current
+    if(roundHasValue(currentRound)) done++;
+    return done;
+  }
+
+  function addRound(){
+    state.rounds.push({});
+    currentRound=state.rounds.length-1;
+    state.cur=currentRound;
+    save();render();
   }
 
   function render(){
-    // Current round card
+    state.cur=currentRound;
     var card=document.getElementById("roundCard");
     card.innerHTML="";
+    var r=state.rounds[currentRound];
     var targets=roundTargets(currentRound+1);
-    var r=state[currentRound];
     var head=document.createElement("div");
     head.className="rhead";
     var num=document.createElement("span");
@@ -189,30 +201,47 @@
     sum.className="rsum";sum.textContent=curSum+" reps";
     head.appendChild(num);head.appendChild(sum);
     card.appendChild(head);
-    for(var j=0;j<targets.length;j++){
+    for(var j=0;j<EXERCISES.length;j++){
       (function(j){
-        var ex=targets[j];
+        var ex=EXERCISES[j];
+        var target=targets[j];
         var line=document.createElement("div");
         line.className="exline";
+        var etop=document.createElement("div");
+        etop.className="etop";
         var lab=document.createElement("span");
         lab.className="elabel";
-        lab.innerHTML=ex.name+' <span class="target">'+ex.target+'</span>';
+        lab.innerHTML=ex.name+' <span class="target">'+target+'</span>';
+        var maxBtn=document.createElement("button");
+        maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+target;
+        maxBtn.addEventListener("click",function(){
+          state.rounds[currentRound][ex.name]=target;
+          save();render();
+        });
+        etop.appendChild(lab);etop.appendChild(maxBtn);
         var inp=document.createElement("input");
-        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
+        inp.className="reps"+((r[ex.name]||0)>=target?" full":"");
+        inp.type="number";inp.min="0";inp.step="1";
         inp.value=r[ex.name]||"";inp.placeholder="0";
         inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
         inp.addEventListener("input",function(){
-          state[currentRound][ex.name]=parseInt(inp.value,10)||0;
+          var v=parseInt(inp.value,10)||0;
+          state.rounds[currentRound][ex.name]=v;
+          if(v>0){
+            // earlier exercises in this round are auto-completed
+            for(var m=0;m<j;m++){
+              state.rounds[currentRound][EXERCISES[m].name]=roundTargets(currentRound+1)[m];
+            }
+          }
           save();render();
         });
-        line.appendChild(lab);line.appendChild(inp);
+        line.appendChild(etop);line.appendChild(inp);
         card.appendChild(line);
       })(j);
     }
-    // Progress dots
     var prog=document.getElementById("progress");
     prog.innerHTML="";
-    for(var i=0;i<ROUNDS;i++){
+    for(var i=0;i<state.rounds.length;i++){
       var d=document.createElement("span");
       d.className="dot"+(i<currentRound?" done":(i===currentRound?" cur":""));
       prog.appendChild(d);
@@ -222,20 +251,20 @@
   }
   function renderTotal(){
     document.getElementById("total").textContent=totalReps();
-    document.getElementById("detail").textContent=roundsDone()+" of "+ROUNDS+" rounds complete";
+    document.getElementById("detail").textContent=roundsDone()+" of "+state.rounds.length+" rounds complete";
     document.getElementById("cardTitle").textContent="Round "+(currentRound+1);
   }
   function renderNav(){
-    document.getElementById("navLabel").textContent="Round "+(currentRound+1)+" / "+ROUNDS;
+    document.getElementById("navLabel").textContent="Round "+(currentRound+1);
     document.getElementById("prevBtn").disabled=currentRound===0;
-    document.getElementById("nextBtn").disabled=currentRound===ROUNDS-1;
   }
 
   document.getElementById("prevBtn").addEventListener("click",function(){
     if(currentRound>0){currentRound--;render();}
   });
   document.getElementById("nextBtn").addEventListener("click",function(){
-    if(currentRound<ROUNDS-1){currentRound++;render();}
+    if(currentRound<state.rounds.length-1){currentRound++;render();}
+    else{addRound();}
   });
   document.getElementById("clearBtn").addEventListener("click",function(){
     state=defaultState();currentRound=0;save();render();
