@@ -273,9 +273,13 @@
     document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
   }
   function renderNav(){
-    document.getElementById("navLabel").textContent="Step "+(currentStep+1)+" / "+STEPS;
-    document.getElementById("prevBtn").disabled=currentStep===0;
-    document.getElementById("nextBtn").disabled=currentStep===STEPS-1;
+    if(state.amrap>0){
+      document.getElementById("navLabel").textContent="All steps complete";
+    } else {
+      document.getElementById("navLabel").textContent="Step "+(currentStep+1)+" / "+STEPS;
+    }
+    document.getElementById("prevBtn").disabled=currentStep===0||state.amrap>0;
+    document.getElementById("nextBtn").disabled=currentStep===STEPS-1||state.amrap>0;
   }
 
   document.getElementById("amrapInput").addEventListener("input",function(){

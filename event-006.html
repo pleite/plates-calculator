@@ -80,10 +80,10 @@
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .amrap .amrap-label{font-family:var(--mono);font-size:13px;color:var(--clay);font-weight:600;}
-  .amrap .amrap-row{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;}
+  .amrap .amrap-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
   .amrap .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
-    text-align:center;width:100%;}
+    text-align:center;width:100%;min-width:80px;}
   .amrap .reps:focus{outline:none;border-color:var(--clay);}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
   button{font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:var(--radius-row);
@@ -288,9 +288,13 @@
     document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
   }
   function renderNav(){
-    document.getElementById("navLabel").textContent="Round "+(currentRound+1)+" / "+ROUNDS;
-    document.getElementById("prevBtn").disabled=currentRound===0;
-    document.getElementById("nextBtn").disabled=currentRound===ROUNDS-1;
+    if(state.amrap>0){
+      document.getElementById("navLabel").textContent="All rounds complete";
+    } else {
+      document.getElementById("navLabel").textContent="Round "+(currentRound+1)+" / "+ROUNDS;
+    }
+    document.getElementById("prevBtn").disabled=currentRound===0||state.amrap>0;
+    document.getElementById("nextBtn").disabled=currentRound===ROUNDS-1||state.amrap>0;
   }
 
   document.getElementById("amrapInput").addEventListener("input",function(){
