@@ -132,7 +132,10 @@
       </div>
       <div class="amrap-row">
         <span style="font-size:14px;">Max C2B Pull-Ups</span>
-        <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP C2B">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP C2B" style="flex:1;">
+          <button id="amrapZero" class="ezero" type="button" style="font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);border-radius:var(--radius-pill);background:var(--white);color:var(--rust);cursor:pointer;-webkit-tap-highlight-color:transparent;">0</button>
+        </div>
       </div>
     </div>
   </section>
@@ -210,8 +213,9 @@
     var num=document.createElement("span");
     num.className="rnum";num.textContent="Round "+(currentRound+1);
     var sum=document.createElement("span");
-    var curSum=0;
-    for(var k in r) curSum+=(r[k]||0);
+    var curSum=state.amrap>0?roundTargetSum():0;
+    if(state.amrap>0){curSum=roundTargetSum();}
+    else{for(var k in r) curSum+=(r[k]||0);}
     sum.className="rsum";sum.textContent=curSum+" reps";
     head.appendChild(num);head.appendChild(sum);
     card.appendChild(head);
@@ -243,9 +247,10 @@
         etop.appendChild(lab);etop.appendChild(btns);
         var inp=document.createElement("input");
         var val=r[ex.name]||0;
-        inp.className="reps"+(val>=ex.target?" full":"")+(val>ex.target?" over":"");
+        var isFull=(state.amrap>0)||(val>=ex.target);
+        inp.className="reps"+(isFull?" full":"")+(val>ex.target?" over":"");
         inp.type="number";inp.min="0";inp.step="1";
-        inp.value=val||"";inp.placeholder="0";
+        inp.value=state.amrap>0?ex.target:(val||"");inp.placeholder="0";
         inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
         inp.addEventListener("input",function(){
           var v=parseInt(inp.value,10)||0;
@@ -265,7 +270,11 @@
     prog.innerHTML="";
     for(var i=0;i<ROUNDS;i++){
       var d=document.createElement("span");
-      d.className="dot"+(i<currentRound?" done":(i===currentRound?" cur":""));
+      var cls="dot";
+      if(state.amrap>0) cls+=" done";
+      else if(i<currentRound) cls+=" done";
+      else if(i===currentRound) cls+=" cur";
+      d.className=cls;
       prog.appendChild(d);
     }
     document.getElementById("amrapInput").value=state.amrap||"";
@@ -286,6 +295,10 @@
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
+    save();render();
+  });
+  document.getElementById("amrapZero").addEventListener("click",function(){
+    state.amrap=0;
     save();render();
   });
   document.getElementById("prevBtn").addEventListener("click",function(){
