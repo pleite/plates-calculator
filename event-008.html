@@ -67,11 +67,15 @@
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .amrap .amrap-label{font-family:var(--mono);font-size:13px;color:var(--clay);font-weight:600;}
-  .amrap .amrap-row{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;}
+  .amrap .amrap-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
   .amrap .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .amrap .reps:focus{outline:none;border-color:var(--clay);}
+  .amrap .ezero{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--rust);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .amrap .ezero:active{transform:scale(.95);}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
   button{font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:var(--radius-row);
     cursor:pointer;border:var(--border);background:var(--white);color:var(--gray-700);
@@ -113,7 +117,10 @@
       </div>
       <div class="amrap-row">
         <span style="font-size:14px;">Max Burpees</span>
-        <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP burpees">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP burpees" style="flex:1;">
+          <button id="amrapZero" class="ezero" type="button">0</button>
+        </div>
       </div>
     </div>
   </section>
@@ -185,6 +192,9 @@
         maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+d.target;
         maxBtn.addEventListener("click",function(){
           state.chipper[i]=d.target;
+          for(var m=0;m<i;m++){
+            state.chipper[m]=CHIPPER[m].target;
+          }
           save();render();
         });
         var zeroBtn=document.createElement("button");
@@ -197,9 +207,10 @@
         etop.appendChild(ex);etop.appendChild(btns);
         var val=state.chipper[i]||0;
         var inp=document.createElement("input");
-        inp.className="reps"+(val>=d.target?" full":"")+(val>d.target?" over":"");
+        var isFull=(state.amrap>0)||(val>=d.target);
+        inp.className="reps"+(isFull?" full":"")+(val>d.target?" over":"");
         inp.type="number";inp.min="0";inp.step="1";
-        inp.value=val||"";inp.placeholder="0";
+        inp.value=state.amrap>0?d.target:(val||"");inp.placeholder="0";
         inp.setAttribute("aria-label",d.name+" "+(i+1));
         inp.addEventListener("input",function(){
           var v=parseInt(inp.value,10)||0;
@@ -227,6 +238,10 @@
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
+    save();render();
+  });
+  document.getElementById("amrapZero").addEventListener("click",function(){
+    state.amrap=0;
     save();render();
   });
   document.getElementById("clearBtn").addEventListener("click",function(){

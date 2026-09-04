@@ -213,6 +213,9 @@
         maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+ex.target;
         maxBtn.addEventListener("click",function(){
           state.rounds[currentRound][ex.name]=ex.target;
+          for(var m=0;m<j;m++){
+            state.rounds[currentRound][EXERCISES[m].name]=EXERCISES[m].target;
+          }
           save();render();
         });
         var zeroBtn=document.createElement("button");

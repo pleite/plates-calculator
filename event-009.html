@@ -79,11 +79,15 @@
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
   .amrap .amrap-label{font-family:var(--mono);font-size:13px;color:var(--clay);font-weight:600;}
-  .amrap .amrap-row{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;}
+  .amrap .amrap-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
   .amrap .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .amrap .reps:focus{outline:none;border-color:var(--clay);}
+  .amrap .ezero{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--rust);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .amrap .ezero:active{transform:scale(.95);}
   .btnrow{display:flex;gap:10px;flex-wrap:wrap;}
   button{font-family:var(--mono);font-size:13px;padding:10px 14px;border-radius:var(--radius-row);
     cursor:pointer;border:var(--border);background:var(--white);color:var(--gray-700);
@@ -131,7 +135,10 @@
       </div>
       <div class="amrap-row">
         <span style="font-size:14px;">Max Cleans</span>
-        <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP cleans">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP cleans" style="flex:1;">
+          <button id="amrapZero" class="ezero" type="button">0</button>
+        </div>
       </div>
     </div>
   </section>
@@ -170,9 +177,6 @@
   var state=load(LS_KEY,defaultState());
   var currentStep=state.cur;
 
-  function stepHasValue(i){
-    return (state.ladder[i]||0)>0;
-  }
   function stepReps(i){
     if(i<currentStep||state.amrap>0) return LADDER[i].target;
     if(i===currentStep) return state.ladder[i]||0;
@@ -186,12 +190,6 @@
   function totalReps(){
     return ladderReps()+(state.amrap||0);
   }
-  function stepsDone(){
-    if(state.amrap>0) return STEPS;
-    var n=currentStep;
-    if(stepHasValue(currentStep)) n++;
-    return n;
-  }
 
   function render(){
     state.cur=currentStep;
@@ -203,7 +201,8 @@
     var w=document.createElement("span");
     w.className="sw";w.textContent=d.weight+" kg";
     var sum=document.createElement("span");
-    sum.className="ssum";sum.textContent=(state.ladder[currentStep]||0)+" reps";
+    var curSum=state.amrap>0?d.target:(state.ladder[currentStep]||0);
+    sum.className="ssum";sum.textContent=curSum+" reps";
     head.appendChild(w);head.appendChild(sum);
     card.appendChild(head);
     var line=document.createElement("div");
@@ -219,6 +218,9 @@
     maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+d.target;
     maxBtn.addEventListener("click",function(){
       state.ladder[currentStep]=d.target;
+      for(var m=0;m<currentStep;m++){
+        state.ladder[m]=LADDER[m].target;
+      }
       save();render();
     });
     var zeroBtn=document.createElement("button");
@@ -231,12 +233,19 @@
     etop.appendChild(lab);etop.appendChild(btns);
     var val=state.ladder[currentStep]||0;
     var inp=document.createElement("input");
-    inp.className="reps"+(val>=d.target?" full":"")+(val>d.target?" over":"");
+    var isFull=(state.amrap>0)||(val>=d.target);
+    inp.className="reps"+(isFull?" full":"")+(val>d.target?" over":"");
     inp.type="number";inp.min="0";inp.step="1";
-    inp.value=val||"";inp.placeholder="0";
+    inp.value=state.amrap>0?d.target:(val||"");inp.placeholder="0";
     inp.setAttribute("aria-label","Cleans at "+d.weight+" kg");
     inp.addEventListener("input",function(){
-      state.ladder[currentStep]=parseInt(inp.value,10)||0;
+      var v=parseInt(inp.value,10)||0;
+      state.ladder[currentStep]=v;
+      if(v>0){
+        for(var m=0;m<currentStep;m++){
+          state.ladder[m]=LADDER[m].target;
+        }
+      }
       save();render();
     });
     line.appendChild(etop);line.appendChild(inp);
@@ -246,7 +255,11 @@
     prog.innerHTML="";
     for(var i=0;i<STEPS;i++){
       var dot=document.createElement("span");
-      dot.className="dot"+(i<currentStep?" done":(i===currentStep?" cur":""));
+      var cls="dot";
+      if(state.amrap>0) cls+=" done";
+      else if(i<currentStep) cls+=" done";
+      else if(i===currentStep) cls+=" cur";
+      dot.className=cls;
       prog.appendChild(dot);
     }
     document.getElementById("amrapInput").value=state.amrap||"";
@@ -267,6 +280,10 @@
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
+    save();render();
+  });
+  document.getElementById("amrapZero").addEventListener("click",function(){
+    state.amrap=0;
     save();render();
   });
   document.getElementById("prevBtn").addEventListener("click",function(){
