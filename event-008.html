@@ -45,16 +45,24 @@
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
   .chipper{display:flex;flex-direction:column;gap:8px;}
-  .crow{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;
-    padding:10px 12px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);
+  .crow{padding:10px 12px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);
     transition:background .12s,border-color .12s;}
   .crow.done{background:var(--tint-olive);border-color:var(--olive);}
+  .crow .etop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .crow .ex{font-size:14px;}
   .crow .ex .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .crow .btns{display:flex;gap:6px;}
+  .crow .emax,.crow .ezero{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--olive);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .crow .ezero{color:var(--rust);}
+  .crow .emax:active,.crow .ezero:active{transform:scale(.95);}
   .crow .reps{font-family:var(--mono);font-size:16px;padding:8px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .crow .reps:focus{outline:none;border-color:var(--clay);}
+  .crow .reps.full{border-color:var(--olive);color:var(--olive);}
+  .crow .reps.over{border-color:var(--rust);color:var(--rust);background:var(--tint-rust);}
   .amrap{margin-top:14px;padding:12px;border:var(--border);border-radius:var(--radius-row);
     background:var(--tint-clay);}
   .amrap .amrap-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -110,7 +118,7 @@
     </div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · Enter reps per exercise · all reps count</p>
+  <p class="foot"><a href="index.html">← All events</a> · Enter reps · AMRAP completes all rows</p>
 </div>
 
 <script>
@@ -124,7 +132,7 @@
     {name:"Echo Bike Calories",target:30},
     {name:"Echo Ski Calories",target:30}
   ];
-  var LS_KEY="event008.chipper.v1";
+  var LS_KEY="event008.state.v3";
 
   function defaultState(){
     var s={chipper:[],amrap:0};
@@ -142,16 +150,20 @@
 
   var state=load(LS_KEY,defaultState());
 
+  function rowReps(i){
+    if(state.amrap>0) return CHIPPER[i].target;
+    return state.chipper[i]||0;
+  }
   function chipperTotal(){
     var t=0;
-    for(var i=0;i<CHIPPER.length;i++) t+=(state.chipper[i]||0);
+    for(var i=0;i<CHIPPER.length;i++) t+=rowReps(i);
     return t;
   }
   function totalReps(){
     return chipperTotal()+(state.amrap||0);
   }
   function isRowDone(i){
-    return (state.chipper[i]||0)>=CHIPPER[i].target;
+    return rowReps(i)>=CHIPPER[i].target;
   }
 
   function render(){
@@ -162,18 +174,44 @@
         var d=CHIPPER[i];
         var row=document.createElement("div");
         row.className="crow"+(isRowDone(i)?" done":"");
+        var etop=document.createElement("div");
+        etop.className="etop";
         var ex=document.createElement("span");
         ex.className="ex";
         ex.innerHTML=d.name+' <span class="target">'+d.target+'</span>';
-        var inp=document.createElement("input");
-        inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
-        inp.value=state.chipper[i]||"";inp.placeholder="0";
-        inp.setAttribute("aria-label",d.name+" "+(i+1));
-        inp.addEventListener("input",function(){
-          state.chipper[i]=parseInt(inp.value,10)||0;
+        var btns=document.createElement("div");
+        btns.className="btns";
+        var maxBtn=document.createElement("button");
+        maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+d.target;
+        maxBtn.addEventListener("click",function(){
+          state.chipper[i]=d.target;
           save();render();
         });
-        row.appendChild(ex);row.appendChild(inp);
+        var zeroBtn=document.createElement("button");
+        zeroBtn.className="ezero";zeroBtn.type="button";zeroBtn.textContent="0";
+        zeroBtn.addEventListener("click",function(){
+          state.chipper[i]=0;
+          save();render();
+        });
+        btns.appendChild(maxBtn);btns.appendChild(zeroBtn);
+        etop.appendChild(ex);etop.appendChild(btns);
+        var val=state.chipper[i]||0;
+        var inp=document.createElement("input");
+        inp.className="reps"+(val>=d.target?" full":"")+(val>d.target?" over":"");
+        inp.type="number";inp.min="0";inp.step="1";
+        inp.value=val||"";inp.placeholder="0";
+        inp.setAttribute("aria-label",d.name+" "+(i+1));
+        inp.addEventListener("input",function(){
+          var v=parseInt(inp.value,10)||0;
+          state.chipper[i]=v;
+          if(v>0){
+            for(var m=0;m<i;m++){
+              state.chipper[m]=CHIPPER[m].target;
+            }
+          }
+          save();render();
+        });
+        row.appendChild(etop);row.appendChild(inp);
         wrap.appendChild(row);
       })(i);
     }
@@ -189,7 +227,7 @@
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
-    save();renderTotal();
+    save();render();
   });
   document.getElementById("clearBtn").addEventListener("click",function(){
     state=defaultState();save();render();

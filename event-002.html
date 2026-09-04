@@ -60,15 +60,18 @@
   .exline .etop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .exline .elabel{font-size:15px;}
   .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
-  .exline .emax{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+  .exline .btns{display:flex;gap:6px;}
+  .exline .emax,.exline .ezero{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
     border-radius:var(--radius-pill);background:var(--white);color:var(--olive);cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
-  .exline .emax:active{transform:scale(.95);}
+  .exline .ezero{color:var(--rust);}
+  .exline .emax:active,.exline .ezero:active{transform:scale(.95);}
   .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .exline .reps:focus{outline:none;border-color:var(--clay);}
   .exline .reps.full{border-color:var(--olive);color:var(--olive);}
+  .exline .reps.over{border-color:var(--rust);color:var(--rust);background:var(--tint-rust);}
   .progress{display:flex;gap:5px;margin-top:14px;flex-wrap:wrap;}
   .progress .dot{width:22px;height:5px;border-radius:3px;background:var(--gray-300);}
   .progress .dot.done{background:var(--olive);}
@@ -125,7 +128,7 @@
     {name:"Wall Walks",perRound:2},
     {name:"Rope Climbs",perRound:1}
   ];
-  function roundTargets(i){ // i is 1-indexed
+  function roundTargets(i){
     var t=[];
     for(var j=0;j<EXERCISES.length;j++) t.push(EXERCISES[j].perRound*i);
     return t;
@@ -135,7 +138,7 @@
     for(var k=0;k<t.length;k++) s+=t[k];
     return s;
   }
-  var LS_KEY="event002.state.v2";
+  var LS_KEY="event002.state.v3";
 
   function defaultState(){
     return {rounds:[{}],cur:0};
@@ -158,9 +161,7 @@
     for(var k in r){ if((r[k]||0)>0) return true; }
     return false;
   }
-  // Rounds before the current one are always complete (full target).
   function roundReps(i){
-    var n=state.rounds.length;
     if(i<currentRound) return roundTargetSum(i+1);
     var r=state.rounds[i],t=0;
     for(var k in r) t+=(r[k]||0);
@@ -172,8 +173,7 @@
     return t;
   }
   function roundsDone(){
-    var n=state.rounds.length;
-    var done=currentRound; // all before current
+    var done=currentRound;
     if(roundHasValue(currentRound)) done++;
     return done;
   }
@@ -183,6 +183,13 @@
     currentRound=state.rounds.length-1;
     state.cur=currentRound;
     save();render();
+  }
+
+  function fillRoundFull(i){
+    var targets=roundTargets(i+1);
+    for(var j=0;j<EXERCISES.length;j++){
+      state.rounds[i][EXERCISES[j].name]=targets[j];
+    }
   }
 
   function render(){
@@ -212,23 +219,32 @@
         var lab=document.createElement("span");
         lab.className="elabel";
         lab.innerHTML=ex.name+' <span class="target">'+target+'</span>';
+        var btns=document.createElement("div");
+        btns.className="btns";
         var maxBtn=document.createElement("button");
         maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+target;
         maxBtn.addEventListener("click",function(){
           state.rounds[currentRound][ex.name]=target;
           save();render();
         });
-        etop.appendChild(lab);etop.appendChild(maxBtn);
+        var zeroBtn=document.createElement("button");
+        zeroBtn.className="ezero";zeroBtn.type="button";zeroBtn.textContent="0";
+        zeroBtn.addEventListener("click",function(){
+          state.rounds[currentRound][ex.name]=0;
+          save();render();
+        });
+        btns.appendChild(maxBtn);btns.appendChild(zeroBtn);
+        etop.appendChild(lab);etop.appendChild(btns);
         var inp=document.createElement("input");
-        inp.className="reps"+((r[ex.name]||0)>=target?" full":"");
+        var val=r[ex.name]||0;
+        inp.className="reps"+(val>=target?" full":"")+(val>target?" over":"");
         inp.type="number";inp.min="0";inp.step="1";
-        inp.value=r[ex.name]||"";inp.placeholder="0";
+        inp.value=val||"";inp.placeholder="0";
         inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
         inp.addEventListener("input",function(){
           var v=parseInt(inp.value,10)||0;
           state.rounds[currentRound][ex.name]=v;
           if(v>0){
-            // earlier exercises in this round are auto-completed
             for(var m=0;m<j;m++){
               state.rounds[currentRound][EXERCISES[m].name]=roundTargets(currentRound+1)[m];
             }

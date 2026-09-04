@@ -44,24 +44,33 @@
   .result .big .unit{font-size:20px;color:var(--gray-500);margin-left:6px;font-family:var(--mono);}
   .result .caption{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:6px;}
   .result .detail{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-top:4px;}
-  .nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+  .nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;}
   .nav button{font-family:var(--mono);font-size:18px;padding:8px 16px;border-radius:var(--radius-row);
     border:var(--border);background:var(--white);color:var(--gray-700);cursor:pointer;
     -webkit-tap-highlight-color:transparent;}
   .nav button:active{transform:scale(.95);}
   .nav button:disabled{opacity:.3;}
-  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:120px;text-align:center;}
+  .nav .round-label{font-family:var(--mono);font-size:13px;color:var(--gray-500);min-width:110px;text-align:center;}
   .step{border:var(--border);border-radius:var(--radius-row);background:var(--ivory);padding:14px;}
   .step .shead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
   .step .sw{font-family:var(--mono);font-size:15px;font-weight:600;}
   .step .ssum{font-family:var(--mono);font-size:13px;color:var(--gray-500);}
-  .exline{display:grid;grid-template-columns:1fr 64px;gap:10px;align-items:center;padding:9px 0;}
+  .exline{padding:9px 0;}
+  .exline .etop{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
   .exline .elabel{font-size:15px;}
   .exline .elabel .target{font-family:var(--mono);font-size:12px;color:var(--gray-500);margin-left:4px;}
+  .exline .btns{display:flex;gap:6px;}
+  .exline .emax,.exline .ezero{font-family:var(--mono);font-size:11px;padding:4px 10px;border:var(--border);
+    border-radius:var(--radius-pill);background:var(--white);color:var(--olive);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;}
+  .exline .ezero{color:var(--rust);}
+  .exline .emax:active,.exline .ezero:active{transform:scale(.95);}
   .exline .reps{font-family:var(--mono);font-size:16px;padding:9px 10px;border:var(--border);
     border-radius:var(--radius-row);background:var(--white);color:var(--gray-700);
     text-align:center;width:100%;}
   .exline .reps:focus{outline:none;border-color:var(--clay);}
+  .exline .reps.full{border-color:var(--olive);color:var(--olive);}
+  .exline .reps.over{border-color:var(--rust);color:var(--rust);background:var(--tint-rust);}
   .progress{display:flex;gap:5px;margin-top:12px;}
   .progress .dot{flex:1;height:5px;border-radius:3px;background:var(--gray-300);}
   .progress .dot.done{background:var(--olive);}
@@ -127,7 +136,7 @@
     </div>
   </section>
 
-  <p class="foot"><a href="index.html">← All events</a> · Enter reps · previous steps auto-complete</p>
+  <p class="foot"><a href="index.html">← All events</a> · Enter reps · AMRAP completes all steps</p>
 </div>
 
 <script>
@@ -141,10 +150,10 @@
     {weight:"95/65",target:2}
   ];
   var STEPS=LADDER.length;
-  var LS_KEY="event009.ladder.v1";
+  var LS_KEY="event009.state.v3";
 
   function defaultState(){
-    var s={ladder:[],amrap:0};
+    var s={ladder:[],amrap:0,cur:0};
     for(var i=0;i<STEPS;i++) s.ladder.push(0);
     return s;
   }
@@ -152,19 +161,20 @@
     try{var raw=localStorage.getItem(key);if(raw==null)return fb;
       var p=JSON.parse(raw);
       if(!p||!Array.isArray(p.ladder)||p.ladder.length!==STEPS)return fb;
+      if(typeof p.cur!=="number"||p.cur<0||p.cur>=STEPS) p.cur=STEPS-1;
       return p;}
     catch(e){return fb;}
   }
   function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
 
   var state=load(LS_KEY,defaultState());
-  var currentStep=0;
+  var currentStep=state.cur;
 
   function stepHasValue(i){
     return (state.ladder[i]||0)>0;
   }
   function stepReps(i){
-    if(i<currentStep) return LADDER[i].target;
+    if(i<currentStep||state.amrap>0) return LADDER[i].target;
     if(i===currentStep) return state.ladder[i]||0;
     return 0;
   }
@@ -177,13 +187,14 @@
     return ladderReps()+(state.amrap||0);
   }
   function stepsDone(){
-    var n=0;
-    for(var i=0;i<currentStep;i++) n++;
+    if(state.amrap>0) return STEPS;
+    var n=currentStep;
     if(stepHasValue(currentStep)) n++;
     return n;
   }
 
   function render(){
+    state.cur=currentStep;
     var card=document.getElementById("stepCard");
     card.innerHTML="";
     var d=LADDER[currentStep];
@@ -197,18 +208,38 @@
     card.appendChild(head);
     var line=document.createElement("div");
     line.className="exline";
+    var etop=document.createElement("div");
+    etop.className="etop";
     var lab=document.createElement("span");
     lab.className="elabel";
     lab.innerHTML="Cleans <span class='target'>"+d.target+"</span>";
+    var btns=document.createElement("div");
+    btns.className="btns";
+    var maxBtn=document.createElement("button");
+    maxBtn.className="emax";maxBtn.type="button";maxBtn.textContent="max "+d.target;
+    maxBtn.addEventListener("click",function(){
+      state.ladder[currentStep]=d.target;
+      save();render();
+    });
+    var zeroBtn=document.createElement("button");
+    zeroBtn.className="ezero";zeroBtn.type="button";zeroBtn.textContent="0";
+    zeroBtn.addEventListener("click",function(){
+      state.ladder[currentStep]=0;
+      save();render();
+    });
+    btns.appendChild(maxBtn);btns.appendChild(zeroBtn);
+    etop.appendChild(lab);etop.appendChild(btns);
+    var val=state.ladder[currentStep]||0;
     var inp=document.createElement("input");
-    inp.className="reps";inp.type="number";inp.min="0";inp.step="1";
-    inp.value=state.ladder[currentStep]||"";inp.placeholder="0";
+    inp.className="reps"+(val>=d.target?" full":"")+(val>d.target?" over":"");
+    inp.type="number";inp.min="0";inp.step="1";
+    inp.value=val||"";inp.placeholder="0";
     inp.setAttribute("aria-label","Cleans at "+d.weight+" kg");
     inp.addEventListener("input",function(){
       state.ladder[currentStep]=parseInt(inp.value,10)||0;
       save();render();
     });
-    line.appendChild(lab);line.appendChild(inp);
+    line.appendChild(etop);line.appendChild(inp);
     card.appendChild(line);
 
     var prog=document.getElementById("progress");
@@ -236,7 +267,7 @@
 
   document.getElementById("amrapInput").addEventListener("input",function(){
     state.amrap=parseInt(this.value,10)||0;
-    save();renderTotal();
+    save();render();
   });
   document.getElementById("prevBtn").addEventListener("click",function(){
     if(currentStep>0){currentStep--;render();}
