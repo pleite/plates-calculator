@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Cardio Chipper">
 <meta name="theme-color" content="#FAF9F5">
 <title>Event 008 — Cardio Chipper</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 <style>
   :root{--ivory:#FAF9F5;--white:#FFFFFF;--slate:#141413;--clay:#D97757;--olive:#788C5D;
     --rust:#B04A3F;--oat:#E3DACC;--gray-150:#F0EEE6;--gray-300:#D1CFC5;--gray-500:#87867F;
@@ -87,6 +90,7 @@
   .foot{text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:8px;}
   .foot a{color:var(--gray-500);text-decoration:none;}
 </style>
+<link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 <div class="page">
@@ -98,7 +102,7 @@
     </div>
   </div>
 
-  <section class="card result">
+  <section class="card result score-sticky" aria-live="polite">
     <div class="big"><span id="total">0</span><span class="unit">reps</span></div>
     <div class="caption">total reps (chipper + AMRAP)</div>
     <div class="detail" id="detail"></div>
@@ -118,16 +122,22 @@
       <div class="amrap-row">
         <span style="font-size:14px;">Max Burpees</span>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input class="reps" id="amrapInput" type="number" min="0" step="1" placeholder="0" aria-label="AMRAP burpees" style="flex:1;">
+          <input class="reps" id="amrapInput" type="number" inputmode="numeric" min="0" step="1" placeholder="0" aria-label="AMRAP burpees" style="flex:1;">
           <button id="amrapZero" class="ezero" type="button">0</button>
         </div>
       </div>
     </div>
   </section>
 
+  <section class="card history-card">
+    <div class="head"><span class="eyebrow">History</span><button id="clearHistoryBtn" class="btn-warn" type="button" style="padding:7px 12px;font-size:12px;">Clear history</button></div>
+    <div id="history" class="history-list"></div>
+  </section>
+
   <p class="foot"><a href="index.html">← All events</a> · Enter reps · AMRAP completes all rows</p>
 </div>
 
+<script src="assets/app.js"></script>
 <script>
 (function(){
   "use strict";
@@ -140,22 +150,21 @@
     {name:"Echo Ski Calories",target:30}
   ];
   var LS_KEY="event008.state.v3";
+  var EVENT_ID="008";
 
   function defaultState(){
     var s={chipper:[],amrap:0};
     for(var i=0;i<CHIPPER.length;i++) s.chipper.push(0);
     return s;
   }
-  function load(key,fb){
-    try{var raw=localStorage.getItem(key);if(raw==null)return fb;
-      var p=JSON.parse(raw);
-      if(!p||!Array.isArray(p.chipper)||p.chipper.length!==CHIPPER.length)return fb;
-      return p;}
-    catch(e){return fb;}
+  function validState(value){return !!value&&Array.isArray(value.chipper)&&value.chipper.length===CHIPPER.length;}
+  function normalizeState(value){
+    if(!validState(value)) return defaultState();
+    value.amrap=parseInt(value.amrap,10)||0;return value;
   }
-  function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+  function save(){XenomApp.write(LS_KEY,state);}
 
-  var state=load(LS_KEY,defaultState());
+  var state=normalizeState(XenomApp.read(LS_KEY,defaultState(),validState));
 
   function rowReps(i){
     if(state.amrap>0) return CHIPPER[i].target;
@@ -209,7 +218,7 @@
         var inp=document.createElement("input");
         var isFull=(state.amrap>0)||(val>=d.target);
         inp.className="reps"+(isFull?" full":"")+(val>d.target?" over":"");
-        inp.type="number";inp.min="0";inp.step="1";
+        inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";
         inp.value=state.amrap>0?d.target:(val||"");inp.placeholder="0";
         inp.setAttribute("aria-label",d.name+" "+(i+1));
         inp.addEventListener("input",function(){
@@ -228,12 +237,18 @@
     }
     document.getElementById("amrapInput").value=state.amrap||"";
     renderTotal();
+    renderHistory();
   }
   function renderTotal(){
     var t=totalReps();
     document.getElementById("total").textContent=t;
     document.getElementById("detail").textContent=chipperTotal()+" chipper · "+(state.amrap||0)+" AMRAP";
     document.getElementById("amrapCount").textContent=(state.amrap||0)+" reps";
+  }
+  function renderHistory(){
+    XenomApp.renderHistory(EVENT_ID,{validateState:validState,onRestore:function(savedState){
+      state=normalizeState(savedState);save();render();window.scrollTo({top:0,behavior:"smooth"});
+    }});
   }
 
   document.getElementById("amrapInput").addEventListener("input",function(){
@@ -245,6 +260,7 @@
     save();render();
   });
   document.getElementById("clearBtn").addEventListener("click",function(){
+    if(totalReps()>0) XenomApp.archive(EVENT_ID,state,totalReps(),chipperTotal()+" chipper · "+(state.amrap||0)+" AMRAP");
     state=defaultState();save();render();
   });
   render();

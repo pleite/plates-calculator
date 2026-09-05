@@ -9,7 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Plates">
 <meta name="theme-color" content="#FAF9F5">
 <title>Event 001 — Snatch RM · Plates</title>
-<link rel="manifest" id="manifest">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 <style>
   :root {
     /* surfaces */
@@ -216,6 +218,7 @@
   .modal .close { border:none; background:var(--gray-150); border-radius:50%; width:34px; height:34px;
                   font-size:16px; color:var(--gray-700); display:flex; align-items:center; justify-content:center; }
 </style>
+<link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 <div class="page">
@@ -227,6 +230,13 @@
     </div>
     <button id="configBtn" class="btn-ghost" aria-label="Settings"><span class="glyph">⚙</span></button>
   </div>
+
+  <!-- RESULT -->
+  <section class="card result score-sticky" aria-live="polite">
+    <div class="big"><span id="total">0</span><span class="unit" id="totalUnit">kg</span></div>
+    <div class="caption">total on the bar</div>
+    <div class="alt" id="totalAlt"></div>
+  </section>
 
   <!-- PLATES -->
   <section class="card">
@@ -246,12 +256,8 @@
     </div>
   </section>
 
-  <!-- RESULT -->
-  <section class="card result">
-    <div class="big"><span id="total">0</span><span class="unit" id="totalUnit">kg</span></div>
-    <div class="caption">total on the bar</div>
-    <div class="alt" id="totalAlt"></div>
-    <div class="divider"></div>
+  <section class="card" aria-label="Load breakdown">
+    <div class="head"><span class="eyebrow">Load breakdown</span></div>
     <div class="sumline"><span class="k">Plates (each side)</span><span class="v" id="sPlates">0</span></div>
     <div class="sumline"><span class="k">Plates × 2 (both sides)</span><span class="v" id="sDouble">0</span></div>
     <div class="sumline"><span class="k">Bar</span><span class="v" id="sBar">0</span></div>
@@ -307,11 +313,11 @@
     <div class="section-label" style="margin-top:20px;">Bar</div>
     <div class="cfg-row">
       <label>Male bar weight</label>
-      <input type="number" id="cfgBarMale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="20">
+      <input type="number" id="cfgBarMale" inputmode="decimal" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="20">
     </div>
     <div class="cfg-row">
       <label>Female bar weight</label>
-      <input type="number" id="cfgBarFemale" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="15">
+      <input type="number" id="cfgBarFemale" inputmode="decimal" step="0.5" min="0" style="font-family:var(--mono);font-size:14px;padding:8px 10px;border:var(--border);border-radius:var(--radius-row);background:var(--ivory);color:var(--gray-700);width:80px;text-align:right;" placeholder="15">
     </div>
 
     <div class="section-label" style="margin-top:20px;">Appearance</div>
@@ -327,6 +333,7 @@
   </div>
 </div>
 
+<script src="assets/app.js"></script>
 <script>
 (function () {
   "use strict";
@@ -421,32 +428,6 @@
     "--tint-clay:rgba(224,138,108,.14);--tint-olive:rgba(147,168,120,.18);--tint-rust:rgba(208,106,94,.18);--tint-oat:rgba(42,42,38,.6);}" +
     "html.dark body{background:var(--ivory);color:var(--gray-700);}";
   document.head.appendChild(styleEl);
-
-  // ---------- PWA MANIFEST (inline blob, for installability) ----------
-  (function injectManifest(){
-    var link = document.getElementById("manifest");
-    var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512'>" +
-      "<rect width='512' height='512' rx='96' fill='%23FAF9F5'/>" +
-      "<circle cx='256' cy='256' r='150' fill='none' stroke='%23D97757' stroke-width='40'/>" +
-      "<circle cx='256' cy='256' r='70' fill='none' stroke='%23788C5D' stroke-width='30'/>" +
-      "<rect x='120' y='300' width='272' height='36' rx='18' fill='%23141413'/></svg>";
-    var b64 = btoa(unescape(encodeURIComponent(svg)));
-    var manifest = {
-      name: "Plates — weight plate calculator",
-      short_name: "Plates",
-      description: "Calculate barbell load from plates, bar, and memory.",
-      start_url: ".",
-      display: "standalone",
-      background_color: "#FAF9F5",
-      theme_color: "#FAF9F5",
-      icons: [
-        { src: "data:image/svg+xml;base64," + b64, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
-        { src: "data:image/svg+xml;base64," + b64, sizes: "192x192", type: "image/svg+xml", purpose: "any" }
-      ]
-    };
-    var blob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
-    link.href = URL.createObjectURL(blob);
-  })();
 
   // ---------- RENDER: PLATES ----------
   function renderPlates(){
@@ -550,8 +531,8 @@
           '<div class="time">' + new Date(h.ts).toLocaleString() + "</div>" +
         "</div>" +
         '<div class="acts">' +
-          '<button data-act="restore" data-idx="' + idx + '" title="Restore">↩</button>' +
-          '<button data-act="del" data-idx="' + idx + '" title="Delete">✕</button>' +
+          '<button data-act="restore" data-idx="' + idx + '" title="Restore" aria-label="Restore saved load">↩</button>' +
+          '<button data-act="del" data-idx="' + idx + '" title="Delete" aria-label="Delete saved load">✕</button>' +
         "</div>";
       wrap.appendChild(item);
     });
@@ -576,9 +557,8 @@
   }
 
   function clearAll(){
-    // push current to history if there's anything to remember
     var ps = plateSum();
-    if (ps > 0 || barValue() > 0){
+    if (ps > 0){
       pushHistory();
     }
     selected = {};
@@ -592,14 +572,19 @@
       var c = selected[p.label] || 0;
       if (c) plates.push({ label: p.label, value: p.value, count: c });
     });
-    history.push({
+    var snapshot = {
       ts: Date.now(),
       unit: unit(),
       plates: plates,
       bar: barValue(),
       gender: barSel.gender,
       total: total()
-    });
+    };
+    var latest = history[history.length - 1];
+    if (latest && latest.unit === snapshot.unit && latest.bar === snapshot.bar &&
+        latest.gender === snapshot.gender && latest.total === snapshot.total &&
+        JSON.stringify(latest.plates || []) === JSON.stringify(snapshot.plates)) return;
+    history.push(snapshot);
     if (history.length > 60) history = history.slice(-60);
     save(LS_HIST, history);
   }

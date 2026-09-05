@@ -1,0 +1,39 @@
+html{scroll-padding-top:132px;}
+body{min-height:100vh;min-height:100dvh;}
+.score-sticky{position:sticky;top:8px;z-index:20;background:var(--white);}
+.action-nav{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:15;
+  width:max-content;max-width:100%;margin-left:auto;margin-right:auto;padding:6px;
+  border:var(--border);border-radius:var(--radius-panel);background:var(--ivory);box-shadow:var(--shadow);}
+input,button,a{touch-action:manipulation;}
+input:focus{scroll-margin-top:140px;scroll-margin-bottom:120px;}
+button,.event-card{min-height:44px;}
+.history-card .head{margin-bottom:6px;}
+.history-list{display:flex;flex-direction:column;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px dashed var(--gray-300);}
+.hist-item:first-child{border-top:none;}
+.hist-meta{flex:1;min-width:0;}
+.hist-score{font-family:var(--serif);font-size:20px;color:var(--clay);}
+.hist-unit,.hist-summary,.hist-time{font-family:var(--mono);color:var(--gray-500);}
+.hist-unit{font-size:11px;margin-left:4px;}
+.hist-summary{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-time{font-size:10.5px;margin-top:2px;}
+.hist-actions{display:flex;gap:6px;flex:none;}
+.hist-actions button{padding:7px 9px;font-size:11px;}
+.hist-empty{font-family:var(--mono);font-size:12.5px;color:var(--gray-500);padding:8px 0;}
+@media (max-width:360px){
+  .result .big{font-size:46px;}
+  .hist-item{align-items:flex-start;flex-direction:column;}
+  .hist-actions{width:100%;}
+  .hist-actions button{flex:1;justify-content:center;}
+}
+@media (max-height:600px) and (orientation:landscape){
+  html{scroll-padding-top:86px;}
+  .page{padding-top:10px;padding-bottom:20px;}
+  .topbar{margin-bottom:10px;}
+  .topbar h1,.topbar .sub{display:none;}
+  .score-sticky{top:4px;padding:8px;margin-bottom:10px;}
+  .score-sticky .big{font-size:38px;}
+  .score-sticky .caption{display:none;}
+  .action-nav{position:static;}
+  input:focus{scroll-margin-top:90px;scroll-margin-bottom:24px;}
+}

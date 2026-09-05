@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-title" content="Barbell Cycling">
 <meta name="theme-color" content="#FAF9F5">
 <title>Event 004 — Barbell Cycling · AMRAP</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
 <style>
   :root{--ivory:#FAF9F5;--white:#FFFFFF;--slate:#141413;--clay:#D97757;--olive:#788C5D;
     --rust:#B04A3F;--oat:#E3DACC;--gray-150:#F0EEE6;--gray-300:#D1CFC5;--gray-500:#87867F;
@@ -86,6 +89,7 @@
   .foot{text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray-500);margin-top:8px;}
   .foot a{color:var(--gray-500);text-decoration:none;}
 </style>
+<link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 <div class="page">
@@ -97,13 +101,13 @@
     </div>
   </div>
 
-  <section class="card result">
+  <section class="card result score-sticky" aria-live="polite">
     <div class="big"><span id="total">0</span><span class="unit">reps</span></div>
     <div class="caption">total reps</div>
     <div class="detail" id="detail"></div>
   </section>
 
-  <div class="nav">
+  <div class="nav action-nav">
     <button id="prevBtn" aria-label="Previous round">←</button>
     <span class="round-label" id="navLabel">Round 1</span>
     <button id="nextBtn" aria-label="Next round">→</button>
@@ -118,9 +122,15 @@
     <div class="progress" id="progress"></div>
   </section>
 
+  <section class="card history-card">
+    <div class="head"><span class="eyebrow">History</span><button id="clearHistoryBtn" class="btn-warn" type="button" style="padding:7px 12px;font-size:12px;">Clear history</button></div>
+    <div id="history" class="history-list"></div>
+  </section>
+
   <p class="foot"><a href="index.html">← All events</a> · → adds a round · earlier reps auto-complete</p>
 </div>
 
+<script src="assets/app.js"></script>
 <script>
 (function(){
   "use strict";
@@ -136,21 +146,20 @@
     return s;
   }
   var LS_KEY="event004.state.v3";
+  var EVENT_ID="004";
 
   function defaultState(){
     return {rounds:[{}],cur:0};
   }
-  function load(key,fb){
-    try{var raw=localStorage.getItem(key);if(raw==null)return fb;
-      var p=JSON.parse(raw);
-      if(!p||!Array.isArray(p.rounds)||p.rounds.length<1)return fb;
-      if(typeof p.cur!=="number"||p.cur<0||p.cur>=p.rounds.length) p.cur=p.rounds.length-1;
-      return p;}
-    catch(e){return fb;}
+  function validState(value){return !!value&&Array.isArray(value.rounds)&&value.rounds.length>0;}
+  function normalizeState(value){
+    if(!validState(value)) return defaultState();
+    if(typeof value.cur!=="number"||value.cur<0||value.cur>=value.rounds.length) value.cur=value.rounds.length-1;
+    return value;
   }
-  function save(){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){}}
+  function save(){XenomApp.write(LS_KEY,state);}
 
-  var state=load(LS_KEY,defaultState());
+  var state=normalizeState(XenomApp.read(LS_KEY,defaultState(),validState));
   var currentRound=state.cur;
 
   function roundHasValue(i){
@@ -229,7 +238,7 @@
         var inp=document.createElement("input");
         var val=r[ex.name]||0;
         inp.className="reps"+(val>=ex.target?" full":"")+(val>ex.target?" over":"");
-        inp.type="number";inp.min="0";inp.step="1";
+        inp.type="number";inp.min="0";inp.step="1";inp.inputMode="numeric";
         inp.value=val||"";inp.placeholder="0";
         inp.setAttribute("aria-label",ex.name+" round "+(currentRound+1));
         inp.addEventListener("input",function(){
@@ -255,6 +264,7 @@
     }
     renderTotal();
     renderNav();
+    renderHistory();
   }
   function renderTotal(){
     document.getElementById("total").textContent=totalReps();
@@ -265,6 +275,11 @@
     document.getElementById("navLabel").textContent="Round "+(currentRound+1);
     document.getElementById("prevBtn").disabled=currentRound===0;
   }
+  function renderHistory(){
+    XenomApp.renderHistory(EVENT_ID,{validateState:validState,onRestore:function(savedState){
+      state=normalizeState(savedState);currentRound=state.cur;save();render();window.scrollTo({top:0,behavior:"smooth"});
+    }});
+  }
 
   document.getElementById("prevBtn").addEventListener("click",function(){
     if(currentRound>0){currentRound--;render();}
@@ -274,6 +289,7 @@
     else{addRound();}
   });
   document.getElementById("clearBtn").addEventListener("click",function(){
+    if(totalReps()>0) XenomApp.archive(EVENT_ID,state,totalReps(),"Reached round "+(currentRound+1)+" of "+state.rounds.length);
     state=defaultState();currentRound=0;save();render();
   });
   render();
