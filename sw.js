@@ -1,6 +1,6 @@
 "use strict";
 
-var CACHE_NAME = "xenom-scorecards-v1";
+var CACHE_NAME = "xenom-scorecards-v2";
 var APP_SHELL = [
   "./",
   "./index.html",

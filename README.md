@@ -65,5 +65,6 @@ Before publishing scoring changes, check at least one current iPhone and Android
 4. Test portrait and landscape with the numeric keyboard open; the score, current round or step, focused input, and navigation must not overlap.
 5. Enable airplane mode after one online visit and reload the hub plus a direct event page.
 6. Return online after a cache-version deployment and confirm the updated app shell appears.
+7. On a segmented dual-screen device, verify both landscape panes keep the score and active controls visible, and rotate or fold/unfold to confirm the layout follows the viewport segments. On browsers without posture or segmentation support, confirm the normal responsive layout remains usable.
 
 Served as a static site via GitHub Pages at `https://pleite.github.io/plates-calculator/`.
